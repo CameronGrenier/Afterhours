@@ -1,5 +1,5 @@
 from enum import Enum
-
+from Games.GameEngine.SlangEngine import SlangEngine
 #Assistant Enum classes to limit the bounds of what states and games can be.
 class RoomStates(Enum):
     WAITING = "Waiting"
@@ -22,6 +22,13 @@ class GameRoom:
         self.state = "waiting"
         self.host = ""
         self.game = Games.NOT_SELECTED
+        self.active_engine = None
+
+    def check_for_player(self, player_name):
+        if player_name not in self.players:
+            return "Error"
+        else:
+            return "Success"
 
     def add_player(self, player_name):
         if player_name not in self.players:
@@ -40,8 +47,8 @@ class GameRoom:
 
     def start_game(self):
         self.state = RoomStates.PLAYING
-        if len(self.players) >= 2:
-            print("Success starting the game")
+        if len(self.players) >= SlangEngine.MINIMUM_PLAYERS:
+            self.active_engine = SlangEngine(players=self.players)
             return "Success"
         else:
             return "Error"
@@ -56,3 +63,4 @@ class GameRoom:
             self.game = Games.CRASH
 
     def handle_action(self, action_type, payload):
+        self.game

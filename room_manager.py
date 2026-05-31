@@ -1,10 +1,13 @@
 import string
+import socketio
 import secrets
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from GameRoom import GameRoom
 
 app = FastAPI()
+sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
+socket_app = socketio.ASGIApp(sio, app)
 # Enable CORS so your Javascript (running on a different port/domain) can talk to this
 app.add_middleware(
     CORSMiddleware,
@@ -12,6 +15,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+#Socket Events
+@sio.event
+async def connect(sid, environ):
+    print(f"Socket connected with {sid}")
+
+@sio.event
+async def join_game_socket(sid,data):
+    code = data["code"]
+    sio.enter_room(sid, code)
 
 #Helper Functions
 def generate_room_code():
@@ -27,6 +40,19 @@ def generate_room_code():
 @app.get("/status")
 def get_status():
     return {"status": "success", "message": "Python server is running"}
+
+@app.post("/room_status")
+def get_room_status(username: str, code: str):
+    if code not in active_rooms:
+        return {"status": "success", "message": "Room code does not exist, must not be in a valid room"}
+    else:
+        room = active_rooms[code]
+        status = room.check_for_player(username)
+        if status == "Success":
+            return {"status": "success", "message": "Room Exists and this player is in the room"}
+        else:
+            return {"status": "success", "message": "Room Exists but the player is not in the room"}
+
 
 
 active_rooms = {}
