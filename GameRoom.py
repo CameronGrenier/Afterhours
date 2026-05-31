@@ -1,5 +1,5 @@
 from enum import Enum
-from Games.GameEngine.SlangEngine import SlangEngine
+from Games.GameEngine.CrashOutEngine import CrashOutEngine
 #Assistant Enum classes to limit the bounds of what states and games can be.
 class RoomStates(Enum):
     WAITING = "Waiting"
@@ -47,8 +47,8 @@ class GameRoom:
 
     def start_game(self):
         self.state = RoomStates.PLAYING
-        if len(self.players) >= SlangEngine.MINIMUM_PLAYERS:
-            self.active_engine = SlangEngine(players=self.players)
+        if len(self.players) >= CrashOutEngine.MINIMUM_PLAYERS:
+            self.active_engine = CrashOutEngine(players=self.players)
             return "Success"
         else:
             return "Error"

@@ -1,5 +1,5 @@
 from enum import Enum
-from PlayerClass import PlayerClass
+from Games.GameEngine.PlayerClass import PlayerClass
 import random
 #games should pivot from HTTP requests to Websocket data. This works great as all users will be synced up.
 class Phases(Enum):
@@ -13,6 +13,10 @@ Test loading and unloading different game engines -> should be fast.
 UDP/TCP on the web sockets?
 
 Web sockets use individual ports????
+
+AWS, get everyone access
+
+Web hosting (hosting on AWS (?), GitHub hosting)
 
 Server broadcasts to the players the current phases of the game. The game starts with one of these broadcasts announcing:
 
@@ -41,7 +45,7 @@ catch potential cheating. Regardless we just change the multiplier to whatever t
 
 
 
-class SlangEngine:
+class CrashOutEngine:
     MINIMUM_PLAYERS = 2
     slang_players = []
     current_round = 0

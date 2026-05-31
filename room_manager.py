@@ -1,7 +1,9 @@
 import string
 import socketio
 import secrets
-from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Optional
+from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 from GameRoom import GameRoom
 
@@ -56,18 +58,25 @@ def get_room_status(username: str, code: str):
 
 
 active_rooms = {}
+class RoomData(BaseModel):
+    username: str
+    code: Optional[str] = None
 @app.post("/create_room")
-def make_room(username: str):
+def make_room(request: RoomData):
+    username = request.username
     while True:
         code = generate_room_code()
         if code not in active_rooms:
             room = GameRoom(code) #Create the room and add the host to it
             room.add_player(username)
             active_rooms[code] = room #Add it to the servers memory
+            print(active_rooms)
             return {"status": "success", "Room Code": code}
 
 @app.post("/join_room")
-def join_room(username: str, code: str):
+def join_room(request: RoomData):
+    code = request.code
+    username = request.username
     if code not in active_rooms:
         return {"status": "error", "message": "Room code does not exist"}
     status = active_rooms[code].add_player(username)
