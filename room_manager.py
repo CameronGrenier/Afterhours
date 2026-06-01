@@ -61,19 +61,22 @@ def get_room_status(request: RoomData):
             return {"status": "userError", "message": "Room Exists but the player is not in the room"}
 
 @app.post("/create_room")
-def make_room(request: RoomData):
+async def make_room(request: RoomData):
     username = request.username
+    sid = request.sid
     while True:
         code = generate_room_code()
         if code not in active_rooms:
             room = GameRoom(code) #Create the room and add the host to it
             room.add_player(username)
+            await sio.enter_room(sid, code)
             active_rooms[code] = room #Add it to the servers memory
             print(active_rooms)
             return {"status": "success", "Room Code": code}
 
 @app.post("/join_room")
 async def join_room(request: RoomData):
+    print(f"Join request received for: {request.username}, SID: {request.sid}")
     code = request.code
     username = request.username
     sid = request.sid
@@ -82,10 +85,10 @@ async def join_room(request: RoomData):
     status = active_rooms[code].add_player(username)
     if status == "Success":
         #Take the sid of the user and add it to this rooms socket channel
-        sio.enter_room(sid, code)
+        await sio.enter_room(sid, code)
         sid_to_rooms[sid] = code #Track what SIO is in what room {just code no need for the whole object)
         #Announce to the rooom (including the current player) that they have joined
-        await sio.emit('player_joined',{'all_players': active_rooms[code].players}, room=code)
+        await sio.emit('player_joined',{'all_players': active_rooms[code].players, 'username':username}, room=code)
         return {"status": "success", "Room Code": code} #Important to pass the code back, the front end should remember the code
     else:
         return {"status": "nameConflict"}
@@ -120,11 +123,12 @@ async def leave_room(request: RoomData):
     sid = request.sid
     if code in active_rooms:
         status = active_rooms[code].remove_player(username)
+        print(f"Leave request received for: {request.username}, SID: {request.sid}")
         if status == "Success":
             # Remove the player from the socket communication room
-            sio.leave_room(sid, code)
+            await sio.leave_room(sid, code)
             #Announce the player has left and give a new players list to all clients in this room.
-            await sio.emit('player_left',{'all_players': active_rooms[code].players})
+            await sio.emit('player_left',{'all_players': active_rooms[code].players, 'username':username}, room=code)
             return {"status": "success", "message": f"{username} has been successfully removed from room {code}"}
         else:
             return {"status": "error, for some reason unable to remove player from the room."}

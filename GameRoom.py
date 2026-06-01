@@ -61,6 +61,3 @@ class GameRoom:
             self.game = Games.SLANG
         elif game_id == "Crash out":
             self.game = Games.CRASH
-
-    def handle_action(self, action_type, payload):
-        self.game

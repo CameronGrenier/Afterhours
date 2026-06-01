@@ -36,26 +36,26 @@ async function postData(endpoint = '', data = {}){
     });
     return response.json()
 }
-function startLobbyListeners(socket){
+function startLobbyListeners(){
     //This function starts client listening for players joining and leaving
     socket.on("player_joined", (data) => {
-        console.log(`[Lobby Alert]: ${data.username} has joined the room!`);
+        console.log(`[Lobby Alert]: ${data.username} has joined the room. These players: ${data.all_players} are in the room`);
     });
     socket.on("player_left", (data) => {
-        console.log(`\n[Lobby Alert]: ${data.username} has left the room.`);
+        console.log(`\n[Lobby Alert]: ${data.username} has left the room. These players ${data.all_players} remain.`);
     });
 }
 
 async function startProgram() {
     let userInput = "";
-    const socket = io
+    startLobbyListeners()
     while (true) {
         //console.clear()
         await fetchServerStatus();
         console.log(`--- Main Menu ---\nUsername: ${userName}\nRoomID: ${roomCode}`);
-        userInput = await rl.question('[1] Join a room\n[2] Create a room\n[3] Get room satus\n[4] Exit\nEnter your command Number: ');
+        userInput = await rl.question('[1] Join a room\n[2] Create a room\n[3] Get room satus\n[4] Leave Room\n[5] Exit\nEnter your command Number: ');
         console.log(`You typed: ${userInput}`);
-        if (userInput === "4"){
+        if (userInput === "5"){
             break
         }
         switch(userInput) {
@@ -63,7 +63,7 @@ async function startProgram() {
                 await checkUsername()
                 const temp_roomCode = await rl.question('Enter the room code you want to join: ');
                 console.log("Joining a room...")
-                const status = await postData('/join_room', {code: `${temp_roomCode}`, username: `${userName}`, sid: `${soso}`})
+                const status = await postData('/join_room', {code: `${temp_roomCode}`, username: `${userName}`, sid: `${socket.id}`})
                 console.log("Reply from server: ", status)
                 if (status['status'] === "success"){
                     roomCode = status['Room Code'] //Remember the room code in memory
@@ -76,7 +76,7 @@ async function startProgram() {
             case "2":
                 await checkUsername()
                 console.log("Creating a room...")
-                const response = await postData('/create_room',{username: `${userName}`})
+                const response = await postData('/create_room',{username: `${userName}`, sid: `${socket.id}` })
                 console.log("Reply from Server: ", response)
                 roomCode = response['Room Code'] //Pull out the room code from the newly created room
                 break;
@@ -88,8 +88,10 @@ async function startProgram() {
                 break;
             case "4":
                 if (roomCode !== "" && userName !== "") {
-                    const response = await postData('/leave_room', {code: `${roomCode}`, username: `${userName}`});
-
+                    const response = await postData('/leave_room', {code: `${roomCode}`, username: `${userName}`, sid:`${socket.id}`});
+                }
+                else{
+                    console.log("You Don't seem to be in a room to leave.")
                 }
                 break;
 
