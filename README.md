@@ -42,4 +42,16 @@ Milestone 01
 
 ## Setup Instructions
 
-Setup instructions will be added once development begins.
+### Backend
+1. cd into the `/backend` directory
+2. create a virtual environment `python -m venv .venv` or `python3 -m venv .venv`
+3. activate venv
+    - `source .venv/bin/activate` on Mac and Linux
+    - `.venv/Scripts/activate` on Windows
+4. install requirements `pip install -r requirements.txt`
+4. run backend (TBD)
+
+### Frontend
+1. cd into the `/frontend` directory
+2. install requirements `npm i`
+3. run frontend `npm run dev`
