@@ -1,4 +1,7 @@
 from enum import Enum
+from typing import Dict, Any
+import asyncio
+import time
 from Games.GameEngine.PlayerClass import PlayerClass
 import random
 #games should pivot from HTTP requests to Websocket data. This works great as all users will be synced up.
@@ -44,27 +47,59 @@ catch potential cheating. Regardless we just change the multiplier to whatever t
 """
 
 
-
+class GamePhases(Enum):
+    BETTING = "betting"
+    PLAYING = "playing"
 class CrashOutEngine:
+    step_duration = 2
     MINIMUM_PLAYERS = 2
-    slang_players = []
+    betting_timeout = 20
+    slang_players = {}
     current_round = 0
+    game_task = None
+    phase = GamePhases.BETTING #Start in the betting phase of the game
     seed = None
     final_round = 5 #can easily make this customizable by the host
-    def __init__(self, players):
+    def __init__(self, players, sio, room):
         print("Starting Game Logic")
         for player in players:
-            self.slang_players.append(PlayerClass(player))
+            self.slang_players[player] = PlayerClass(player) #Create a dictionary of player objects to quicky edit their data
+        self.sio = sio #Used for socket communicaion
+        self.room = room
+        self.game_task = asyncio.create_task(self.run_game_loop())
 
-    def handle_action(self, ):
+    async def run_game_loop(self):
+        for i in range(self.final_round):
+            await self.start_betting()
+
+    async def handle_event(self, username:str, event_type:str, data: Dict[str, Any]):
         print("handle some action")
-    def update_scores(self):
-        """End of round update the scores for each player based on when they got out"""
-        print("Updating scores per player")
+        user = self.slang_players[username] #Grab the user
+        if event_type == "place_bet" and self.phase == Phases.BETTING:
+            user.place_bet(ammount = data['bet'])
+        elif event_type == "cash_out" and self.phase == Phases.PLAYING:
+            cashout_time = data['cashout_time']
+            client_multiplier = data['multiplier']
+            server_multiplier = self.get_multiplier_at_time(cashout_time)
+            if client_multiplier - server_multiplier <= 0.5 or server_multiplier - client_multiplier <= 0.5:
+                user.payout(client_multiplier)
+            else:
+                user.payout(server_multiplier)
 
-    def place_bet(self):
-        """Take in a players information """
-        print("User has placed a bet")
+    async def start_betting(self):
+        self.current_round += 1
+        await self.sio.emit('game_update', {'phase': "betting", 'seconds': self.betting_timeout}, room=self.room)
+        await asyncio.sleep(self.betting_timeout)
+        self.phase = Phases.PLAYING
+        await self.playing_phase()
+
+    async def playing_phase(self):
+        self.generate_seed()
+        await self.sio.emit('game_update', {'phase': "playing", 'seed':self.seed, 'seconds': 5}, room=self.room)
+        await asyncio.sleep(5) #Sleep for a 5 second countdown
+        await self.sio.emit('game_update', {'phase': "blast_off", 'start_time': time.time()}, room=self.room) #Tell all clients to start playing the rocket animation for this seed. Ensures clients are synced
+        await asyncio.sleep(len(self.seed) * self.step_duration)
+        self.phase = Phases.BETTING
 
     def generate_seed(self):
         """Generate a seed when placing a bet"""
@@ -73,17 +108,17 @@ class CrashOutEngine:
         weights = [1 / (i**1.5) for i in numbers]
         self.seed = [0] + random.choices(numbers, weights=weights, k=length - 1)
 
-    def  get_multiplier_at_time(self, time_elapsed):
+    def  get_multiplier_at_time(self, blastoff_time):
         """Each step takes 2 seconds to change between, we can use the timestamp to get the multiplier the user got"""
-        step_duration = 2
-        index = int(time_elapsed//step_duration) #Find the point the user cashed out
+        time_elapsed = max(0, time.time() - blastoff_time) #Ensure no negatives with max
+        index = int(time_elapsed//self.step_duration) #Find the point the user cashed out
         if index >= len(self.seed) - 1: #End of seed Crash
             return 0
         start_val = self.seed[index]
         end_val = self.seed[index+1]
 
         #Calculate how far into the step we were, this is the float of the multiplier
-        progress = (time_elapsed % step_duration) / step_duration
+        progress = (time_elapsed % self.step_duration) / self.step_duration
         multiplier = start_val + (end_val - start_val) * progress
         return multiplier
 

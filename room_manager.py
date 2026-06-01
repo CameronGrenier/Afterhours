@@ -1,8 +1,9 @@
+import json
 import string
 import socketio
 import secrets
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any, Dict
 from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 from GameRoom import GameRoom
@@ -99,17 +100,33 @@ def select_game(game_id: str, code: str):
         room = active_rooms[code]
         room.set_game(game_id)
 
-
-
 @app.post("/start_game")
 def start_game(game_name: str, code: str):
-    room = active_rooms.get(code)
+    room = active_rooms[code]
     if not room:
         return {"status": "error", "message": "Room not found"}
     status = room.start_game()
     if status == "Error":
         return {"status": "error, not enough players to start the selected game"}
     return {"status": "success"}
+
+class GameEvent:
+    username: str
+    code: str
+    event_type: str
+    data: Dict[str, Any]
+@app.post("/game_event")
+async def handle_event(request:GameEvent):
+    code = request.code
+    username = request.username
+    event_type = request.event_type
+    data = request.data
+    if code in active_rooms:
+        room = active_rooms[code]
+        await room.handle_event(username, event_type, data)
+        return {"status":"Success Game action completed"}
+    else:
+        return {"status":"codeError", "message":"Room with that code does not exist"}
 
 #Web Socket Events:
 
