@@ -108,13 +108,15 @@ async def join_room(request: RoomData):
     else:
         return {"status": "nameConflict"}
 @app.post("/select_game")
-def select_game(request: RoomGameRequest):
+async def select_game(request: RoomGameRequest):
     code = request.code
     game_id = request.game_id
     if code in active_rooms:
         room = active_rooms[code]
-        room.set_game(game_id)
-        return {"status":"success", "message": f"Game for room {code} is {room.game}"}
+        set_game = room.set_game(game_id)
+        #Tell everyone in the lobby what the game is
+        await sio.emit('lobby_update',{'game':set_game.value}, room=code)
+        return {"status":"success", "message": f"Game for room {code} is {room.game.value}", "game":f"{room.game.value}"}
     return{"status": "error", "message": f"Game room {code} does not exist"}
 @app.post("/start_game")
 async def start_game(request: RoomGameRequest):

@@ -68,6 +68,7 @@ class GameRoom:
             self.game = Games.SLANG
         elif game_id == "Crash Out":
             self.game = Games.CRASH
+        return self.game
     async def handle_event(self, username:str, event_type:str, data:Dict[str, Any]):
         if self.active_engine is not None:
             await self.active_engine.handle_event(username, event_type, data)

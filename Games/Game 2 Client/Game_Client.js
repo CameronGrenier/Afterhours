@@ -1,14 +1,16 @@
+import CrashGame from "./CrashGameClass.js";
 let userName = "Alec" //Global variable for the username
 let roomCode = "" //Global variable for the entered room code
 const SERVER_BASE = 'http://127.0.0.1:8000' //Global URL for the server. LocalHost
-const readline = require('readline').promises;
-const {io} = require("socket.io-client");
+import readline from 'node:readline/promises';
+import { io } from "socket.io-client";
 const socket = io(SERVER_BASE); //Start a web socket on this client
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 }); //Readline code for asking user input
-
+let activeGameID = null; //This is the select game, only changed when recieved back from the server
+let activeGame = null;
 async function postData(endpoint = '', data = {}){
     const response = await fetch(`${SERVER_BASE}${endpoint}`,
         {method : 'POST',
@@ -23,12 +25,14 @@ async function create_room(){
     const response = await postData('/create_room',{username: `${userName}`, sid: `${socket.id}` })
     console.log("Reply from Server: ", response)
     roomCode = response['Room Code'] //Pull out the room code from the newly created room
-    socket.on("game_update", (data) => {
-        console.log(`Got a new game update ${data}`);
+     socket.on("lobby_update", (data) => {
+         activeGameID = data.game
+         console.log(`For this lobby game has changed to: ${activeGameID}`)
     });
 }
 
 async function startProgram() {
+    await create_room()
     let userInput = "";
     //startLobbyListeners()
     while (true) {
@@ -48,6 +52,15 @@ async function startProgram() {
                 break;
             case "2":
                 const start_status = await postData('/start_game', {code: `${roomCode}`})
+                console.log("active Game ID: ", activeGameID)
+
+                if (activeGameID === "Crash Out"){
+                    activeGame = new CrashGame()
+                    socket.on("game_update", (data) => {
+                    console.log(`Got a new game update ${data}`);
+                    activeGame.handleSocketEvent(data)
+                });
+                }
                 break;
         }
     }
@@ -68,7 +81,6 @@ async function main(){
     socket.on("connect", () => {
     //Important verification to ensure the user socket can talk with the server socket.
     console.log("Connected to server with Socket ID: ", socket.id)
-    create_room();
     startProgram();
 })
 }

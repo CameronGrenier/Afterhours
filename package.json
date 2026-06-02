@@ -1,4 +1,7 @@
 {
+  "name": "afterhours-game",
+  "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "socket.io-client": "^4.8.3"
   }

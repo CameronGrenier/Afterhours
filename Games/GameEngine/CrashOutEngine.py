@@ -71,7 +71,13 @@ class CrashOutEngine:
     async def start(self):
         print("Starting game loop")
         #Tell everyone their starting scores
-        await self.sio.emit('game_update', {'game':'crash_out','starting_score':self.starting_score}, room=self.room)
+        await self.sio.emit('game_update', {
+            'type': 'START_GAME',
+            'payload': {
+                'game': 'Games.CRASH',
+                'starting_score': self.starting_score,
+            }
+        }, room=self.room)
         self.game_task = asyncio.create_task(self.run_game_loop()) #Start the game loop
 
     async def run_game_loop(self):
@@ -99,7 +105,13 @@ class CrashOutEngine:
     async def start_betting(self):
         self.current_round += 1
         print(f"Current Round {self.current_round} Betting Phase")
-        await self.sio.emit('game_update', {'phase': "betting", 'seconds': self.betting_timeout}, room=self.room)
+        await self.sio.emit('game_update', {
+            'type': 'PHASE_CHANGE',
+            'payload': {
+                'phase': 'betting',
+                'seconds': self.betting_timeout,
+            }
+        }, room=self.room)
         await asyncio.sleep(self.betting_timeout)
         self.phase = Phases.PLAYING
         print("Changing to playing phase")
@@ -107,18 +119,45 @@ class CrashOutEngine:
 
     async def playing_phase(self):
         self.generate_seed()
-        await self.sio.emit('game_update', {'phase': "playing", 'seed':self.seed, 'seconds': 5}, room=self.room)
+        await self.sio.emit('game_update', {
+            'type': 'PHASE_CHANGE',
+            'payload': {
+                'phase': 'playing',
+                'seed': self.seed,
+                'seconds': 5
+            }
+        }, room=self.room)
         await asyncio.sleep(5) #Sleep for a 5 second countdown
-        await self.sio.emit('game_update', {'phase': "blast_off", 'start_time': time.time()}, room=self.room) #Tell all clients to start playing the rocket animation for this seed. Ensures clients are synced
+        await self.sio.emit('game_update', {
+            'type': 'PHASE_CHANGE',
+            'payload': {
+                'phase': 'blast_off',
+                'start_time': time.time(),
+            }
+        }, room=self.room)
         await asyncio.sleep(len(self.seed) * self.step_duration)
         self.phase = Phases.BETTING
 
     def generate_seed(self):
-        """Generate a seed when placing a bet"""
         length = random.randint(1, 10)
-        numbers = list(range(1,10000)) #Numbers between 1 and 9999
-        weights = [1 / (i**1.5) for i in numbers]
-        self.seed = [0] + random.choices(numbers, weights=weights, k=length - 1)
+        # Start with 0
+        seed = [1]
+        current_value = 0
+        for _ in range(length - 1):
+            # Determine the "jump" to the next number.
+            # random.randint(min_jump, max_jump) controls the aggressiveness of the trend.
+            # Example: 1 to 500 means it adds between 1 and 500 each step.
+            offset = _ * 5
+            current_value += offset
+            jump = random.randint(1, 40)
+            # Add the jump to the current total
+            current_value += jump
+            # Add a random "wiggle" to allow for dips (e.g., -200 to +200)
+            # This keeps the trend generally upward but makes it less predictable.
+            wiggle = random.randint((-20 * (offset//4)), 30)
+            next_val = max(1, current_value + wiggle)  # max(1, ...) keeps it positive
+            seed.append(next_val)
+        self.seed = seed
 
     def  get_multiplier_at_time(self, blastoff_time):
         """Each step takes 2 seconds to change between, we can use the timestamp to get the multiplier the user got"""
