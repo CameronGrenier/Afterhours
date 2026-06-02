@@ -109,5 +109,4 @@ socket.on("connect", () => {
     //Important verification to ensure the user socket can talk with the server socket.
     console.log("Connected to server with Socket ID: ", socket.id)
     startProgram();
-
 })

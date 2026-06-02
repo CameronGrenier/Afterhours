@@ -52,8 +52,9 @@ class GamePhases(Enum):
     PLAYING = "playing"
 class CrashOutEngine:
     step_duration = 2
-    MINIMUM_PLAYERS = 2
-    betting_timeout = 20
+    starting_score = 50
+    MINIMUM_PLAYERS = 1
+    betting_timeout = 3
     slang_players = {}
     current_round = 0
     game_task = None
@@ -66,7 +67,12 @@ class CrashOutEngine:
             self.slang_players[player] = PlayerClass(player) #Create a dictionary of player objects to quicky edit their data
         self.sio = sio #Used for socket communicaion
         self.room = room
-        self.game_task = asyncio.create_task(self.run_game_loop())
+
+    async def start(self):
+        print("Starting game loop")
+        #Tell everyone their starting scores
+        await self.sio.emit('game_update', {'game':'crash_out','starting_score':self.starting_score}, room=self.room)
+        self.game_task = asyncio.create_task(self.run_game_loop()) #Start the game loop
 
     async def run_game_loop(self):
         for i in range(self.final_round):
@@ -76,7 +82,11 @@ class CrashOutEngine:
         print("handle some action")
         user = self.slang_players[username] #Grab the user
         if event_type == "place_bet" and self.phase == Phases.BETTING:
-            user.place_bet(ammount = data['bet'])
+            #Front end should verify this later to not waste server time.
+            if user.place_bet(ammount = data['bet']):
+                return {'status':'success', 'new_score':f'{user.score}'}
+            else:
+                return {'status':'error', 'message':'User entered an amount greater than their score'}
         elif event_type == "cash_out" and self.phase == Phases.PLAYING:
             cashout_time = data['cashout_time']
             client_multiplier = data['multiplier']
@@ -88,9 +98,11 @@ class CrashOutEngine:
 
     async def start_betting(self):
         self.current_round += 1
+        print(f"Current Round {self.current_round} Betting Phase")
         await self.sio.emit('game_update', {'phase': "betting", 'seconds': self.betting_timeout}, room=self.room)
         await asyncio.sleep(self.betting_timeout)
         self.phase = Phases.PLAYING
+        print("Changing to playing phase")
         await self.playing_phase()
 
     async def playing_phase(self):

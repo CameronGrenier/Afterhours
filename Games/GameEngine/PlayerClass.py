@@ -12,10 +12,13 @@ class PlayerClass:
         self.score = 50
         self.bet = 0
         self.gain = 0
-    def place_bet(self, ammount: int):
+    def place_bet(self, amount: int):
         """Places the players bet"""
-        self.score = self.score - ammount
-        self.bet = ammount
+        if amount > self.score:
+            return False
+        self.score = self.score - amount
+        self.bet = amount
+        return True
     def payout(self, multiplier: float):
         """Put winnings in the bank"""
         self.gain = self.bet * multiplier

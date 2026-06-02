@@ -4,6 +4,7 @@ from typing import Dict, Any
 from Games.GameEngine.CrashOutEngine import CrashOutEngine
 #Assistant Enum classes to limit the bounds of what states and games can be.
 class RoomStates(Enum):
+    EMPTY = "Empty"
     WAITING = "Waiting"
     PLAYING = "Playing"
 
@@ -44,14 +45,17 @@ class GameRoom:
     def remove_player(self, player_name):
         if player_name in self.players:
             self.players.remove(player_name)
+            if len(self.players) == 0:
+                self.state = RoomStates.EMPTY
             return "Success"
         else:
             return "Error"
 
-    def start_game(self):
+    async def start_game(self): #should be dynamic depending on the game, for now assuming crash out
         self.state = RoomStates.PLAYING
         if len(self.players) >= CrashOutEngine.MINIMUM_PLAYERS:
             self.active_engine = CrashOutEngine(players=self.players, sio=self.sio, room=self.room_code)
+            await self.active_engine.start() #Start the game loop
             return "Success"
         else:
             return "Error"
@@ -62,7 +66,7 @@ class GameRoom:
         #game == <game_id>
         if game_id == "Slang":
             self.game = Games.SLANG
-        elif game_id == "Crash out":
+        elif game_id == "Crash Out":
             self.game = Games.CRASH
     async def handle_event(self, username:str, event_type:str, data:Dict[str, Any]):
         if self.active_engine is not None:
