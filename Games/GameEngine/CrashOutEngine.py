@@ -47,9 +47,6 @@ catch potential cheating. Regardless we just change the multiplier to whatever t
 """
 
 
-class GamePhases(Enum):
-    BETTING = "betting"
-    PLAYING = "playing"
 class CrashOutEngine:
     step_duration = 2
     starting_score = 50
@@ -58,7 +55,7 @@ class CrashOutEngine:
     slang_players = {}
     current_round = 0
     game_task = None
-    phase = GamePhases.BETTING #Start in the betting phase of the game
+    phase = Phases.BETTING #Start in the betting phase of the game
     seed = None
     final_round = 5 #can easily make this customizable by the host
     def __init__(self, players, sio, room):
@@ -88,19 +85,29 @@ class CrashOutEngine:
         print("handle some action")
         user = self.slang_players[username] #Grab the user
         if event_type == "place_bet" and self.phase == Phases.BETTING:
-            #Front end should verify this later to not waste server time.
-            if user.place_bet(ammount = data['bet']):
-                return {'status':'success', 'new_score':f'{user.score}'}
+            #If the bet is valid and can be made
+            print(data['bet'])
+            if user.place_bet(amount = data['bet']):
+                #Return the updated score - bet and the bet placed to the user
+                print("User Placed Bet")
+                return True, "New bet has been placed", {'score':user.score, 'bet':data['bet']}, {'score':user.score, 'bet':data['bet']}
             else:
-                return {'status':'error', 'message':'User entered an amount greater than their score'}
+                return False,"Bet was unable to be placed", None, None
         elif event_type == "cash_out" and self.phase == Phases.PLAYING:
             cashout_time = data['cashout_time']
             client_multiplier = data['multiplier']
             server_multiplier = self.get_multiplier_at_time(cashout_time)
+            #Should be off of time, not multiplier, but I will leave this for now
             if client_multiplier - server_multiplier <= 0.5 or server_multiplier - client_multiplier <= 0.5:
-                user.payout(client_multiplier)
+                multiplier = client_multiplier
+                user.payout(multiplier)
             else:
-                user.payout(server_multiplier)
+                multiplier = server_multiplier
+                user.payout(multiplier)
+            #Success cash out, tell everyone what multiplier they cased out which, and what their new total score is
+            return True, "User has cashed out", {'multiplier':multiplier, 'score':user.score, 'gain':user.gain}, {'multiplier':multiplier, 'score':user.score}
+        else:
+            return False, f"Unrecognized event type {event_type} was sent to the server", {}, {}
 
     async def start_betting(self):
         self.current_round += 1
@@ -145,15 +152,13 @@ class CrashOutEngine:
         current_value = 0
         for _ in range(length - 1):
             # Determine the "jump" to the next number.
-            # random.randint(min_jump, max_jump) controls the aggressiveness of the trend.
-            # Example: 1 to 500 means it adds between 1 and 500 each step.
+            #Add an index offset to keep it in a upward trend
             offset = _ * 5
             current_value += offset
             jump = random.randint(1, 40)
             # Add the jump to the current total
             current_value += jump
-            # Add a random "wiggle" to allow for dips (e.g., -200 to +200)
-            # This keeps the trend generally upward but makes it less predictable.
+            # Add a random "wiggle" allow it to be negative by the offset
             wiggle = random.randint((-20 * (offset//4)), 30)
             next_val = max(1, current_value + wiggle)  # max(1, ...) keeps it positive
             seed.append(next_val)

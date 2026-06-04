@@ -9,6 +9,8 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 }); //Readline code for asking user input
+let waitingForInput = false
+let playing = false
 let activeGameID = null; //This is the select game, only changed when recieved back from the server
 let activeGame = null;
 async function postData(endpoint = '', data = {}){
@@ -30,12 +32,35 @@ async function create_room(){
          console.log(`For this lobby game has changed to: ${activeGameID}`)
     });
 }
+function onSendAction(event_type, payload){
+    // This function is what the engine calls to "talk" to the server
+    socket.emit('game_action', {
+        event_type: event_type,
+        data: payload
+    }, (response) => {
+        // Handle the "Acknowledgment" (success/fail) here
+        if (response.status === 'success') {
+            console.log("Server accepted action:", response);
+        } else {
+            console.error("Server rejected action:", response.message);
+        }
+    });
+}
 
+async function onPhaseChange(phase){
+    console.log("Betting phase called")
+    if (phase === 'betting') {
+        const input = await rl.question(">> Betting is open! Type 'bet <amount>': ");
+
+        // Send that input back to the engine
+        activeGame.handleInputEvent({ type: 'place_bet', amount: parseInt(input.split(' ')[1]) });
+    }
+}
 async function startProgram() {
     await create_room()
     let userInput = "";
     //startLobbyListeners()
-    while (true) {
+    while (playing === false) {
         //console.clear()
         console.log(`--- Main Menu ---\nUsername: ${userName}\nRoomID: ${roomCode}`);
         userInput = await rl.question('[1] Pick a game\n[2] Start Game\n[3] Exit\nEnter your command Number: ');
@@ -46,22 +71,22 @@ async function startProgram() {
         switch (userInput) {
             case "1":
                 const response = await postData('/select_game', {code: `${roomCode}`, game_id: `Crash Out`})
-                if (response['status'] === "success"){
-                    console.log(`${response['message']}` )
+                if (response['status'] === "success") {
+                    console.log(`${response['message']}`)
                 }
                 break;
             case "2":
                 const start_status = await postData('/start_game', {code: `${roomCode}`})
                 console.log("active Game ID: ", activeGameID)
-
-                if (activeGameID === "Crash Out"){
-                    activeGame = new CrashGame()
+                if (activeGameID === "Crash Out") {
                     socket.on("game_update", (data) => {
-                    console.log(`Got a new game update ${data}`);
-                    activeGame.handleSocketEvent(data)
-                });
+                        console.log(`Got a new game update ${data}`);
+                        activeGame.handleSocketEvent(data)
+                    });
+                    activeGame = new CrashGame(onSendAction, onPhaseChange)
+                    playing = true
+                    break;
                 }
-                break;
         }
     }
 }
@@ -73,8 +98,6 @@ async function clientGameloop(){
         const response = await postData('/game_event', {username:`${userName}`, code: `${roomCode}`, event_type: 'place_bet', data: {'bet': bet}})
         bet_status = response['status']
     }
-
-
 }
 
 async function main(){

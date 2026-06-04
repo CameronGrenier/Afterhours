@@ -71,4 +71,7 @@ class GameRoom:
         return self.game
     async def handle_event(self, username:str, event_type:str, data:Dict[str, Any]):
         if self.active_engine is not None:
-            await self.active_engine.handle_event(username, event_type, data)
+            status, message, local_data, broadcast_data = await self.active_engine.handle_event(username, event_type, data)
+            return status, message, local_data, broadcast_data
+        else:
+            return False,"No active engine found for this room.", None

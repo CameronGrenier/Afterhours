@@ -186,4 +186,31 @@ async def join_game_socket(sid,data):
     code = data["code"]
     print(f"Socket {sid} joined the room {code}")
 
+
+@sio.on('game_action')
+async def handle_game_action(sid, payload):
+    #Get the room
+    event_type = payload.get('event_type')
+    data = payload.get('data')
+    room_code = sid_to_rooms[sid]
+    room = active_rooms[room_code]
+    if not room:
+        return {"status": "error", "message": "Room not found"}
+    player_username = sid_to_username[sid]
+    #Local data is returned to the sender of the socket request (client) this is private info, used for local UI updates
+    #broadcast_data is broadcasted to all clients in this game room / instance. This is public data to be acknoledged or seen by all players.
+    success, message, local_data, broadcast_data = await room.handle_event(username=sid_to_username[sid], event_type=event_type, data=data)
+    if success:
+        # 3. Broadcast the confirmed action to EVERYONE in the room
+        await sio.emit('game_update', {
+            'type': 'PLAYER_ACTION',
+            'player': player_username,
+            'action': event_type,
+            'details': broadcast_data
+        }, room=room_code)
+        return {"status": "success", "data":local_data}
+    else:
+        # 4. Error response only to the person who messed up
+        return {"status": "error", "message": message}
+
 #run this with: uvicorn filename:app --reload
