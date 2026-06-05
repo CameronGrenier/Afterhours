@@ -131,15 +131,15 @@ class CrashOutEngine:
             'payload': {
                 'phase': 'playing',
                 'seed': self.seed,
-                'seconds': 5
+                'start_time': time.time() + 5,
+                'step_inverval': self.step_duration
             }
         }, room=self.room)
-        await asyncio.sleep(5) #Sleep for a 5 second countdown
+        await asyncio.sleep(5.3) #Sleep for a 5 second countdown
         await self.sio.emit('game_update', {
             'type': 'PHASE_CHANGE',
             'payload': {
                 'phase': 'blast_off',
-                'start_time': time.time(),
             }
         }, room=self.room)
         await asyncio.sleep(len(self.seed) * self.step_duration)

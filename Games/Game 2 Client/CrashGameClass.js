@@ -4,6 +4,7 @@ export default class CrashGame {
         this.score = 0;
         this.phase = "waiting";
         this.seed = null;
+        this.step_duration = 0;
         this.onSendAction = onSendAction
         this.onPhaseChange = onPhaseChange
     }
@@ -16,7 +17,7 @@ export default class CrashGame {
         return `${hours}:${minutes}:${seconds}`;
     }
 
-    handleInputEvent(input){
+    async handleInputEvent(input){
         console.log(`Client Game Engine is processing ${input.type}`);
         switch (input.type) {
             case 'place_bet':
@@ -27,13 +28,13 @@ export default class CrashGame {
                     console.log(">> Can't bet right now!");
                 }
                 break;
-
             case 'cash_out':
-                if (this.phase === 'playing') {
-                    console.log(">> Cashing out!");
+                if (this.phase === 'blast_off') {
+                    console.log(`>> Cashing out! ${input.multiplier}`);
                     const cur_time = Date.now()
-                    const multiplier = 2
-                    this.onSendAction("cash_out", {"cashout_time":cur_time, "multiplier":multiplier})
+                    const cashData = await this.onSendAction("cash_out", {"cashout_time":cur_time, "multiplier":input.multiplier})
+                    console.log('cashData: ',cashData)
+                    this.score = cashData.score
                 } else {
                     console.log(">> Nothing to cash out!");
                 }
@@ -47,13 +48,12 @@ export default class CrashGame {
         console.log(`Crash logic running for: ${type}`);
 
         switch (type) {
-            case "GAME_START":
+            case "START_GAME":
                 // Updating the class variables
                 this.score = payload.starting_score;
                 this.phase = "betting";
                 console.log(`Game started! Initial score: ${this.score}`);
                 break;
-
             case "PHASE_CHANGE":
                 this.phase = payload.phase;
                 if (this.phase === "betting"){
@@ -63,8 +63,9 @@ export default class CrashGame {
                 }
                 else if (this.phase === "playing"){
                     this.seed = payload.seed
-                    this.countdown = payload.seconds
-                    console.log(`${this.get_timestamp()} In Playing phase ${this.seed} ${this.countdown}`)
+                    this.countdown = payload.start_time
+                    this.step_duration = payload.step_inverval
+                    console.log(`${this.get_timestamp()} In Playing phase ${this.seed}`)
                     this.onPhaseChange(this.phase)
                     //Call some function to do the countdown and start the rocket
                 }

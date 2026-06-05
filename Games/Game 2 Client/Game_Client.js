@@ -1,11 +1,15 @@
 import CrashGame from "./CrashGameClass.js";
 let userName = "Alec" //Global variable for the username
 let roomCode = "" //Global variable for the entered room code
+let serverTimeOffset = null
+let multiplier = 0
+let crashOut = false
 const SERVER_BASE = 'http://127.0.0.1:8000' //Global URL for the server. LocalHost
-import readline from 'node:readline/promises';
+import rlPromise from 'node:readline/promises';
+import readline from 'node:readline';
 import { io } from "socket.io-client";
 const socket = io(SERVER_BASE); //Start a web socket on this client
-const rl = readline.createInterface({
+const rl = rlPromise.createInterface({
     input: process.stdin,
     output: process.stdout
 }); //Readline code for asking user input
@@ -26,35 +30,115 @@ async function create_room(){
     console.log("Creating a room...")
     const response = await postData('/create_room',{username: `${userName}`, sid: `${socket.id}` })
     console.log("Reply from Server: ", response)
+    serverTimeOffset = response["Server Time"] - (Date.now() / 1000)
     roomCode = response['Room Code'] //Pull out the room code from the newly created room
      socket.on("lobby_update", (data) => {
          activeGameID = data.game
          console.log(`For this lobby game has changed to: ${activeGameID}`)
     });
 }
-function onSendAction(event_type, payload){
-    // This function is what the engine calls to "talk" to the server
-    socket.emit('game_action', {
-        event_type: event_type,
-        data: payload
-    }, (response) => {
-        // Handle the "Acknowledgment" (success/fail) here
-        if (response.status === 'success') {
-            console.log("Server accepted action:", response);
-        } else {
-            console.error("Server rejected action:", response.message);
-        }
+function onSendAction(event_type, payload) {
+    // Return a Promise so we can "await" the result later
+    return new Promise((resolve, reject) => {
+        socket.emit('game_action', {
+            event_type: event_type,
+            data: payload
+        }, (response) => {
+            // Check if the response exists and has a success status
+            if (response && response.status === 'success') {
+                console.log("Server accepted action:", response);
+                resolve(response); // Send the data back to the 'await' caller
+            } else {
+                console.error("Server rejected action:", response?.message || "Unknown error");
+                reject(response || "Error"); // Trigger the 'catch' block
+            }
+        });
     });
 }
 
 async function onPhaseChange(phase){
     console.log("Betting phase called")
     if (phase === 'betting') {
+        console.log(`**Available to bet: $${activeGame.score}**`)
         const input = await rl.question(">> Betting is open! Type 'bet <amount>': ");
-
         // Send that input back to the engine
         activeGame.handleInputEvent({ type: 'place_bet', amount: parseInt(input.split(' ')[1]) });
     }
+    else if (phase === 'playing'){
+        runSyncCountdown(activeGame.countdown)
+    }
+    else if (phase === 'blast_off'){
+        startRocket(getServerTime())
+    }
+}
+function runSyncCountdown(targetStartTime) {
+    const interval = setInterval(() => {
+        const now = getServerTime(); // Use our synchronized clock
+        const remaining = targetStartTime - now;
+
+        if (remaining <= 0) {
+            clearInterval(interval);
+            process.stdout.write("\r\x1b[K>> Blast off! 🚀\n");
+        } else {
+            // Display remaining time, formatted to 1 decimal place
+            process.stdout.write(`\r\x1b[K>> Game starting in ${remaining.toFixed(1)}s...`);
+        }
+    }, 100); // 100ms interval for a smoother countdown
+}
+function getServerTime() {
+    return (Date.now() / 1000) + serverTimeOffset;
+}
+function enableInput() {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+
+    process.stdin.on('data', (key) => {
+        // 'c' or 'C' triggers cash out
+        if (key.toLowerCase() === 'c') {
+            activeGame.handleInputEvent({ type: 'cash_out', multiplier: multiplier})
+            crashOut = true
+        }
+        // Ctrl+C to exit
+        if (key === '\u0003') { process.exit(); }
+    });
+}
+function getMultiplierAtTime(blastOffTime) {
+    const step_duration = activeGame.step_duration
+    const seed = activeGame.seed
+    console.log(`poop: ${seed} ${step_duration}`)
+    const timeElapsed = Math.max(0, getServerTime() - blastOffTime);
+    const index = Math.floor(timeElapsed / step_duration);
+
+    if (index >= seed.length - 1) return 0; // Crashed!
+
+    const startVal = seed[index];
+    const endVal = seed[index + 1];
+    const progress = (timeElapsed % step_duration) / step_duration;
+
+    return startVal + (endVal - startVal) * progress;
+}
+
+function startRocket(blastOffTime) {
+    enableInput(); // Turn on the "c" listener
+
+    const interval = setInterval(() => {
+        multiplier = getMultiplierAtTime(blastOffTime);
+        // Update the line dynamically
+        process.stdout.write(`\r\x1b[K>> Multiplier: ${multiplier.toFixed(2)}x | Press 'c' to cash out!`);
+
+        if (crashOut === true){
+            console.log(`\n----------\nCashed out at: ${multiplier.toFixed(2)}\n----------`)
+            clearInterval(interval);
+            process.stdin.setRawMode(false); // Disable raw mode
+        }
+        else if (multiplier <= 0) {
+            process.stdout.write("\n>> BUSTED! 💥\n");
+            clearInterval(interval);
+            process.stdin.setRawMode(false); // Disable raw mode
+        }
+
+    }, 100); // 100ms updates for smooth display
 }
 async function startProgram() {
     await create_room()
@@ -91,19 +175,10 @@ async function startProgram() {
     }
 }
 
-async function clientGameloop(){
-    const bet = await rl.question('Enter the ammount of money you would like to bet ');
-    let bet_status = ""
-    while (bet_status !== "success"){ //Keep asking for bet until the user get's it right
-        const response = await postData('/game_event', {username:`${userName}`, code: `${roomCode}`, event_type: 'place_bet', data: {'bet': bet}})
-        bet_status = response['status']
-    }
-}
-
 async function main(){
-    socket.on("connect", () => {
+    socket.on("connect", (data) => {
     //Important verification to ensure the user socket can talk with the server socket.
-    console.log("Connected to server with Socket ID: ", socket.id)
+    console.log(`Connected to server with Socket ID: ${socket.id}`);
     startProgram();
 })
 }

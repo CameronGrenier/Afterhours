@@ -1,5 +1,6 @@
 import json
 import string
+import time
 import socketio
 import secrets
 from pydantic import BaseModel
@@ -86,7 +87,7 @@ async def make_room(request: RoomData):
             sid_to_username[sid] = username
             active_rooms[code] = room #Add it to the servers memory
             print(active_rooms)
-            return {"status": "success", "Room Code": code}
+            return {"status": "success", "Room Code": code, "Server Time":time.time()}
 
 @app.post("/join_room")
 async def join_room(request: RoomData):
@@ -104,7 +105,7 @@ async def join_room(request: RoomData):
         sid_to_username[sid] = username
         #Announce to the rooom (including the current player) that they have joined
         await sio.emit('player_joined',{'all_players': active_rooms[code].players, 'username':username}, room=code)
-        return {"status": "success", "Room Code": code} #Important to pass the code back, the front end should remember the code
+        return {"status": "success", "Room Code": code, "Server Time":time.time()} #Important to pass the code back, the front end should remember the code
     else:
         return {"status": "nameConflict"}
 @app.post("/select_game")
@@ -172,6 +173,7 @@ async def leave_room(request: RoomData):
 @sio.event
 async def connect(sid, environ):
     print(f"Socket connected with {sid}")
+
 
 @sio.event
 async def disconnect(sid):
