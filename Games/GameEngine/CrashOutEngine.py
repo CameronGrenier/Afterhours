@@ -52,7 +52,7 @@ class CrashOutEngine:
     starting_score = 50
     MINIMUM_PLAYERS = 1
     betting_timeout = 8
-    slang_players = {}
+    game_players = {}
     current_round = 0
     game_task = None
     blastoff_time = 0
@@ -60,9 +60,17 @@ class CrashOutEngine:
     seed = None
     final_round = 5 #can easily make this customizable by the host
     def __init__(self, players, sio, room):
-        print("Starting Game Logic")
+        """
+         Initializes the stateful game container for a specific room instance.
+
+         :param players: A list of unique string usernames present in the lobby.
+         :param sio: The AsyncServer socket instance passed down from RoomManager.
+         :param room: The unique string room code used for broadcasting data fields.
+         """
+        print(f"[Engine] Spin-up sequence initiated for Room: {room}")
         for player in players:
-            self.slang_players[player] = PlayerClass(player) #Create a dictionary of player objects to quicky edit their data
+            # Create a dictionary of player objects to quicky edit their data
+            self.game_players[player] = PlayerClass(player)
         self.sio = sio #Used for socket communicaion
         self.room = room
 
@@ -90,7 +98,7 @@ class CrashOutEngine:
 
     async def handle_event(self, username:str, event_type:str, data: Dict[str, Any]):
         print("handle some action")
-        user = self.slang_players[username] #Grab the user
+        user = self.game_players[username] #Grab the user
         if event_type == "place_bet" and self.phase == Phases.BETTING:
             #If the bet is valid and can be made
             print(data['bet'])
