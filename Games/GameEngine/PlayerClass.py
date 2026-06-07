@@ -21,7 +21,7 @@ class PlayerClass:
         return True
     def payout(self, multiplier: float):
         """Put winnings in the bank"""
-        self.gain = self.bet * multiplier
+        self.gain = round(self.bet * multiplier, 2)
         self.score += self.gain
         self.bet = 0
 

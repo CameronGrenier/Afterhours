@@ -52,7 +52,7 @@ class CrashOutEngine:
     starting_score = 50
     MINIMUM_PLAYERS = 1
     betting_timeout = 8
-    game_players = {}
+    active_players: dict[str, PlayerClass] = {}
     current_round = 0
     game_task = None
     blastoff_time = 0
@@ -70,7 +70,7 @@ class CrashOutEngine:
         print(f"[Engine] Spin-up sequence initiated for Room: {room}")
         for player in players:
             # Create a dictionary of player objects to quicky edit their data
-            self.game_players[player] = PlayerClass(player)
+            self.active_players[player] = PlayerClass(player)
         self.sio = sio #Used for socket communicaion
         self.room = room
 
@@ -98,7 +98,7 @@ class CrashOutEngine:
 
     async def handle_event(self, username:str, event_type:str, data: Dict[str, Any]):
         print("handle some action")
-        user = self.game_players[username] #Grab the user
+        user = self.active_players[username] #Grab the user
         if event_type == "place_bet" and self.phase == Phases.BETTING:
             #If the bet is valid and can be made
             print(data['bet'])
@@ -163,23 +163,80 @@ class CrashOutEngine:
             }
         }, room=self.room)
         await asyncio.sleep(len(self.seed) * self.step_duration)
+        await self.cleanup_round()
+        await asyncio.sleep(1) #Sleep to allow for scoreboard before we bet again
         self.phase = Phases.BETTING
 
+    async def get_scoreboard(self):
+        #Sort players by their gain
+        sorted_players = sorted(
+            self.active_players.values(),
+            key=lambda p: p.gain,
+            reverse=True
+        )
+        worst_gain = sorted_players[-1].gain
+        biggest_loosers = []
+        for player in reversed(sorted_players):
+            #Flip the list from worst to best gain
+            print(worst_gain, player.gain)
+            if player.gain == worst_gain:
+                #If the players gain is or tied with the worst gain add them to the biggest loosers
+                biggest_loosers.append(player.name)
+            else:
+                break #Stop looping we're better than the worst now
+        return biggest_loosers
+
+    async def cleanup_round(self):
+        """Reset gains, revive broke players, send punishments"""
+        biggest_loosers = await self.get_scoreboard()
+        #If punishments are sent the client should not tell the biggest looser to take a shot
+        #Biggest loosers will always be those who have lost everything. Making them take another shot is pointless
+        punishment = False
+        #After the scoreboard is fetched, reset the gains of each player
+        for player in self.active_players:
+            this_player = self.active_players[player]
+            this_player.gain = 0
+            if this_player.score == 0:
+                #If someone has lost everything, let them back into the game
+                punishment = True
+                this_player.score = 10
+                await self.sio.emit('game_update', {
+                    'type': 'PHASE_CHANGE',
+                    'payload': {
+                        'phase': 'player_punishment',
+                        'name': this_player.name,
+                    }
+                }, room=self.room)
+                await asyncio.sleep(1)
+                #Here is where voting could take place to let the person back into the game
+
+            print("Biggest Loosers: ", biggest_loosers)
+            await self.sio.emit('game_update', {
+                'type': 'PHASE_CHANGE',
+                'payload': {
+                    'phase': 'update_score',
+                    'punishment': punishment,
+                    'biggest_loosers': biggest_loosers,
+                }
+            }, room=self.room)
+
     def generate_seed(self):
-        length = random.randint(1, 10)
+        #The longer the seed the higher the multipliers, This promotes comebacks as the game progresses
+        length = random.randint(1, (6 + self.current_round))
         # Start with 0
         seed = [1]
         current_value = 0
         for _ in range(length - 1):
             # Determine the "jump" to the next number.
             #Add an index offset to keep it in a upward trend
-            offset = _ * 5
+            offset = _ * (0 + self.current_round)
             current_value += offset
-            jump = random.randint(1, 40)
+            #Make values larger as rounds go on, allows for surprise comebacks.
+            jump = random.randint(1, (1 * self.current_round))
             # Add the jump to the current total
             current_value += jump
             # Add a random "wiggle" allow it to be negative by the offset
-            wiggle = random.randint((-20 * (offset//4)), 30)
+            wiggle = random.randint((-10 * (offset//4)), (1 * self.current_round))
             next_val = max(1, current_value + wiggle)  # max(1, ...) keeps it positive
             seed.append(next_val)
         self.seed = seed

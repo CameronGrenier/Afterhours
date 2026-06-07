@@ -1,7 +1,7 @@
 export default class CrashGame {
     constructor(onSendAction, onPhaseChange, userName, roomCode, serverTimeOffset) {
         // These are your persistent local states for this game
-        this.score = null;
+        this.score = 0;
         this.phase = "waiting";
         this.seed = null;
         this.step_duration = 0;
@@ -70,17 +70,18 @@ export default class CrashGame {
             case "PHASE_CHANGE":
                 this.phase = payload.phase;
                 if (this.phase === "betting"){
-                    if(this.score === null){
+                    if(this.score === 0){
                         const response = await this.postData({'username':this.userName,'code':this.roomCode,'event_type':'get_score','data':{}})
-                        console.log("Asked server for score got back", response);
+                        //console.log("Asked server for score got back", response);
                         if(response['status'] === "success"){
-                            console.log("Asked server for score got back", response);
+                            //console.log("Asked server for score got back", response);
                             this.score = response['data'].score
                         }
                     }
                     console.log(`${this.get_timestamp()} In betting phase`)
                     this.onPhaseChange(this.phase)
                     //Ask for input, make the HTTP call to place a bet on send Can only send 1 bet no take backs
+                    break;
                 }
                 else if (this.phase === "playing"){
                     this.seed = payload.seed
@@ -89,13 +90,24 @@ export default class CrashGame {
                     console.log(`${this.get_timestamp()} In Playing phase ${this.seed}`)
                     this.onPhaseChange(this.phase)
                     //Call some function to do the countdown and start the rocket
+                    break;
                 }
                 else if (this.phase === "blast_off"){
                     console.log(`${this.get_timestamp()} In Blast Off Phase`)
                     this.onPhaseChange(this.phase)
                     //End Countdown, start rocket animation, add in cash out option, on cash out http call to server
+                    break;
                 }
-                break;
+                else if (this.phase === "update_score"){
+                    console.log("Payload: ", payload)
+                    if(payload.punishement === false){
+                        console.log(`Players ${payload.biggest_loosers} need to take a shot`)
+                    }
+                break;}
+                else if (this.phase === "player_punishment") {
+                    console.log(`Player ${payload.name} went broke, <<Punishment>>`)
+                    break;
+                }
             case "END_GAME":
                 this.phase = "game_over"
                 this.onPhaseChange(this.phase)
