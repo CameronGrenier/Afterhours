@@ -43,10 +43,12 @@ class GameRoom:
         else:
             return "Error"
     def remove_player(self, player_name):
+        print("Removing Player: ", player_name)
         if player_name in self.players:
             self.players.remove(player_name)
             if len(self.players) == 0:
                 self.state = RoomStates.EMPTY
+            print("Remaining Players: ", self.players)
             return "Success"
         else:
             return "Error"

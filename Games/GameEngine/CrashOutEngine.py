@@ -51,10 +51,11 @@ class CrashOutEngine:
     step_duration = 2
     starting_score = 50
     MINIMUM_PLAYERS = 1
-    betting_timeout = 3
+    betting_timeout = 8
     slang_players = {}
     current_round = 0
     game_task = None
+    blastoff_time = 0
     phase = Phases.BETTING #Start in the betting phase of the game
     seed = None
     final_round = 5 #can easily make this customizable by the host
@@ -71,7 +72,7 @@ class CrashOutEngine:
         await self.sio.emit('game_update', {
             'type': 'START_GAME',
             'payload': {
-                'game': 'Games.CRASH',
+                'game': 'Crash Out',
                 'starting_score': self.starting_score,
             }
         }, room=self.room)
@@ -80,6 +81,12 @@ class CrashOutEngine:
     async def run_game_loop(self):
         for i in range(self.final_round):
             await self.start_betting()
+        await self.sio.emit('game_update', {
+            'type': 'END_GAME',
+            'payload': {
+            }
+        }, room=self.room)
+
 
     async def handle_event(self, username:str, event_type:str, data: Dict[str, Any]):
         print("handle some action")
@@ -94,18 +101,22 @@ class CrashOutEngine:
             else:
                 return False,"Bet was unable to be placed", None, None
         elif event_type == "cash_out" and self.phase == Phases.PLAYING:
+            current_server_time = time.time()
+            print(f"Current server time: {current_server_time} Client Time: {data['cashout_time']}")
+            if abs(current_server_time - data['cashout_time'] >= 2):
+                return False, "Latency is too high to verify cashout", None, None
             cashout_time = data['cashout_time']
             client_multiplier = data['multiplier']
             server_multiplier = self.get_multiplier_at_time(cashout_time)
-            #Should be off of time, not multiplier, but I will leave this for now
-            if client_multiplier - server_multiplier <= 0.5 or server_multiplier - client_multiplier <= 0.5:
+            if abs(server_multiplier - client_multiplier) <= 0.5:
                 multiplier = client_multiplier
-                user.payout(multiplier)
             else:
                 multiplier = server_multiplier
-                user.payout(multiplier)
+            user.payout(multiplier)
             #Success cash out, tell everyone what multiplier they cased out which, and what their new total score is
             return True, "User has cashed out", {'multiplier':multiplier, 'score':user.score, 'gain':user.gain}, {'multiplier':multiplier, 'score':user.score}
+        elif event_type == "get_score":
+            return True, "User has been given their score",{'score':user.score},{}
         else:
             return False, f"Unrecognized event type {event_type} was sent to the server", {}, {}
 
@@ -126,16 +137,17 @@ class CrashOutEngine:
 
     async def playing_phase(self):
         self.generate_seed()
+        self.blastoff_time = time.time() + 5
         await self.sio.emit('game_update', {
             'type': 'PHASE_CHANGE',
             'payload': {
                 'phase': 'playing',
                 'seed': self.seed,
-                'start_time': time.time() + 5,
+                'start_time': self.blastoff_time,
                 'step_inverval': self.step_duration
             }
         }, room=self.room)
-        await asyncio.sleep(5.3) #Sleep for a 5 second countdown
+        await asyncio.sleep(5) #Sleep for a 5 second countdown
         await self.sio.emit('game_update', {
             'type': 'PHASE_CHANGE',
             'payload': {
@@ -164,16 +176,14 @@ class CrashOutEngine:
             seed.append(next_val)
         self.seed = seed
 
-    def  get_multiplier_at_time(self, blastoff_time):
-        """Each step takes 2 seconds to change between, we can use the timestamp to get the multiplier the user got"""
-        time_elapsed = max(0, time.time() - blastoff_time) #Ensure no negatives with max
-        index = int(time_elapsed//self.step_duration) #Find the point the user cashed out
-        if index >= len(self.seed) - 1: #End of seed Crash
+    def get_multiplier_at_time(self, cashout_time):
+        # Use the cashout_time from the client, not time.time()
+        time_elapsed = max(0, cashout_time - self.blastoff_time)
+        index = int(time_elapsed // self.step_duration)
+        if index >= len(self.seed) - 1:
             return 0
         start_val = self.seed[index]
-        end_val = self.seed[index+1]
-
-        #Calculate how far into the step we were, this is the float of the multiplier
+        end_val = self.seed[index + 1]
         progress = (time_elapsed % self.step_duration) / self.step_duration
         multiplier = start_val + (end_val - start_val) * progress
         return multiplier

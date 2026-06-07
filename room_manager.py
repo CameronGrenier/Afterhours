@@ -131,14 +131,18 @@ async def start_game(request: RoomGameRequest):
     return {"status": "success"}
 @app.post("/game_event")
 async def handle_event(request:GameEvent):
+    """This is the HTTP call from the client to the server global payload is not used for anything as no emit is made"""
     username = request.username
     code = request.code
     event_type = request.event_type
     data = request.data
     if code in active_rooms:
         room = active_rooms[code]
-        await room.handle_event(username, event_type, data)
-        return {"status":"Success Game action completed"}
+        success, message, local_payload, global_payload = await room.handle_event(username, event_type, data)
+        if success:
+            return {'status':'success','message':message,'data':local_payload}
+        else:
+            return {'status':'error'}
     else:
         return {"status":"codeError", "message":"Room with that code does not exist"}
 
@@ -179,8 +183,9 @@ async def connect(sid, environ):
 async def disconnect(sid):
     if sid in sid_to_rooms:
         room_code = sid_to_rooms[sid]
-        active_rooms[room_code].remove_player(sid)
-        await sio.emit('player_left',{'all_players': active_rooms[room_code].players})
+        username = sid_to_username[sid]
+        active_rooms[room_code].remove_player(username)
+        await sio.emit('player_left',{'username':username,'all_players': active_rooms[room_code].players})
         del sid_to_rooms[sid] #Remove it from the data structure
 
 @sio.event
@@ -206,9 +211,10 @@ async def handle_game_action(sid, payload):
         # 3. Broadcast the confirmed action to EVERYONE in the room
         await sio.emit('game_update', {
             'type': 'PLAYER_ACTION',
+            'payload': {
             'player': player_username,
             'action': event_type,
-            'details': broadcast_data
+            'details': broadcast_data}
         }, room=room_code)
         return {"status": "success", "data":local_data}
     else:

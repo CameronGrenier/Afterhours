@@ -57,7 +57,6 @@ function onSendAction(event_type, payload) {
 }
 
 async function onPhaseChange(phase){
-    console.log("Betting phase called")
     if (phase === 'betting') {
         console.log(`**Available to bet: $${activeGame.score}**`)
         const input = await rl.question(">> Betting is open! Type 'bet <amount>': ");
@@ -69,6 +68,11 @@ async function onPhaseChange(phase){
     }
     else if (phase === 'blast_off'){
         startRocket(getServerTime())
+    }
+    else if (phase === 'game_over'){
+        playing = false
+        activeGame = null
+        disableInput()
     }
 }
 function runSyncCountdown(targetStartTime) {
@@ -88,20 +92,27 @@ function runSyncCountdown(targetStartTime) {
 function getServerTime() {
     return (Date.now() / 1000) + serverTimeOffset;
 }
+const handleInput = (key) => {
+    if (key.toLowerCase() === 'c') {
+        activeGame.handleInputEvent({ type: 'cash_out', multiplier: multiplier });
+        crashOut = true;
+    }
+    if (key === '\u0003') { process.exit(); }
+};
+
 function enableInput() {
     process.stdin.setRawMode(true);
     process.stdin.resume();
     process.stdin.setEncoding('utf8');
+    process.stdin.on('data', handleInput); // Use the named function
+}
 
-    process.stdin.on('data', (key) => {
-        // 'c' or 'C' triggers cash out
-        if (key.toLowerCase() === 'c') {
-            activeGame.handleInputEvent({ type: 'cash_out', multiplier: multiplier})
-            crashOut = true
-        }
-        // Ctrl+C to exit
-        if (key === '\u0003') { process.exit(); }
-    });
+function disableInput() {
+    process.stdin.removeListener('data', handleInput);
+    process.stdin.setRawMode(false);
+    // Don't pause! Just drain the buffer.
+    while (process.stdin.read() !== null) {
+    }
 }
 function getMultiplierAtTime(blastOffTime) {
     const step_duration = activeGame.step_duration
@@ -120,6 +131,7 @@ function getMultiplierAtTime(blastOffTime) {
 }
 
 function startRocket(blastOffTime) {
+    crashOut = false
     enableInput(); // Turn on the "c" listener
 
     const interval = setInterval(() => {
@@ -127,15 +139,10 @@ function startRocket(blastOffTime) {
         // Update the line dynamically
         process.stdout.write(`\r\x1b[K>> Multiplier: ${multiplier.toFixed(2)}x | Press 'c' to cash out!`);
 
-        if (crashOut === true){
-            console.log(`\n----------\nCashed out at: ${multiplier.toFixed(2)}\n----------`)
+        if (crashOut === true || multiplier <= 0) {
+            process.stdout.write(crashOut ? "\n>> Cashed out! ✅\n Waiting for betting phase to begin..." : "\n>> BUSTED! 💥\n");
             clearInterval(interval);
-            process.stdin.setRawMode(false); // Disable raw mode
-        }
-        else if (multiplier <= 0) {
-            process.stdout.write("\n>> BUSTED! 💥\n");
-            clearInterval(interval);
-            process.stdin.setRawMode(false); // Disable raw mode
+            disableInput(); // <--- USE THE HELPER
         }
 
     }, 100); // 100ms updates for smooth display
@@ -144,33 +151,38 @@ async function startProgram() {
     await create_room()
     let userInput = "";
     //startLobbyListeners()
-    while (playing === false) {
-        //console.clear()
-        console.log(`--- Main Menu ---\nUsername: ${userName}\nRoomID: ${roomCode}`);
-        userInput = await rl.question('[1] Pick a game\n[2] Start Game\n[3] Exit\nEnter your command Number: ');
-        console.log(`You typed: ${userInput}`);
-        if (userInput === "3") {
-            break
-        }
-        switch (userInput) {
-            case "1":
-                const response = await postData('/select_game', {code: `${roomCode}`, game_id: `Crash Out`})
-                if (response['status'] === "success") {
-                    console.log(`${response['message']}`)
-                }
-                break;
-            case "2":
-                const start_status = await postData('/start_game', {code: `${roomCode}`})
-                console.log("active Game ID: ", activeGameID)
-                if (activeGameID === "Crash Out") {
-                    socket.on("game_update", (data) => {
-                        console.log(`Got a new game update ${data}`);
-                        activeGame.handleSocketEvent(data)
-                    });
-                    activeGame = new CrashGame(onSendAction, onPhaseChange)
-                    playing = true
+    while (true) {
+        if(playing === false){
+            //console.clear()
+            console.log(`--- Main Menu ---\nUsername: ${userName}\nRoomID: ${roomCode}`);
+            userInput = await rl.question('[1] Pick a game\n[2] Start Game\n[3] Exit\nEnter your command Number: ');
+            console.log(`You typed: ${userInput}`);
+            if (userInput === "3") {
+                process.exit()
+            }
+            switch (userInput) {
+                case "1":
+                    const response = await postData('/select_game', {code: `${roomCode}`, game_id: `Crash Out`})
+                    if (response['status'] === "success") {
+                        console.log(`${response['message']}`)
+                    }
                     break;
-                }
+                case "2":
+                    const start_status = await postData('/start_game', {code: `${roomCode}`})
+                    console.log("active Game ID: ", activeGameID)
+                    if (activeGameID === "Crash Out") {
+                        socket.on("game_update", async (data) => {
+                            console.log(`Got a new game update ${data}`);
+                            await activeGame.handleSocketEvent(data)
+                        });
+                        activeGame = new CrashGame(onSendAction, onPhaseChange, userName, roomCode, serverTimeOffset)
+                        playing = true
+                        break;
+                    }
+            }
+        }
+        else{
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
 }
