@@ -25,9 +25,10 @@ export default function TestPage() {
           <MemberItem username={"MatureAdult"}/>
           <MemberItem username={"FunnyUsername"}/>
           <MemberItem username={"Batman"}/>
+          <PartyCode partyCode={"ABCD"} isCompact = {true} position={"br"} />
         </div>
       </Panel>
-      <PartyCode partyCode={"ABCD"} isCompact = {false} position={"br"} />
+      <PartyCode partyCode={"ABCD"} isCompact = {false} />
       <PartyCode partyCode={"ABCD"} isCompact = {true} position={"br"} />
     </main>
   );
