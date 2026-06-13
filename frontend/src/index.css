@@ -58,3 +58,12 @@
   --font-display: "Basenji", sans-serif;
   --font-sans: "Space Grotesk", sans-serif;
 }
+
+/* ---- style reset ---- */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+}
