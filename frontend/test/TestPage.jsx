@@ -1,4 +1,5 @@
 import Panel from "../src/components/Panel.jsx"
+import PartyCode from "../src/components/PartyCode.jsx"
 import "../src/components/MemberItem.jsx"
 import MemberItem from "../src/components/MemberItem.jsx";
 import { Users } from 'lucide-react'
@@ -24,8 +25,10 @@ export default function TestPage() {
           <MemberItem username={"MatureAdult"}/>
           <MemberItem username={"FunnyUsername"}/>
           <MemberItem username={"Batman"}/>
+          <PartyCode partyCode={"ABCD"} isCompact = {true} position={"br"} />
         </div>
       </Panel>
+      <PartyCode partyCode={"ABCD"} isCompact = {false} />
     </main>
   );
 }
