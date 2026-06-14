@@ -29,7 +29,6 @@ export default function TestPage() {
         </div>
       </Panel>
       <PartyCode partyCode={"ABCD"} isCompact = {false} />
-      <PartyCode partyCode={"ABCD"} isCompact = {true} position={"br"} />
     </main>
   );
 }
