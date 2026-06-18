@@ -25,7 +25,7 @@ function PartyCode( { partyCode, isCompact = false, position = "bl" } ) {
 
     if (!isCompact) {
         return (
-            <div className="mx-auto w-[80vw] max-w-[400px]">
+            <div className="mx-auto w-full">
                 <h2 className="mb-4 text-center text-4xl font-bold text-white">
                     Party Code
                 </h2>
