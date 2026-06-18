@@ -55,8 +55,12 @@
 
 /* ---- expose to Tailwind ---- */
 @theme {
+  /* Fonts */
   --font-display: "Basenji", sans-serif;
   --font-sans: "Space Grotesk", sans-serif;
+
+  /* Colours */
+  --color-danger: #E00000
 }
 
 /* ---- style reset ---- */
