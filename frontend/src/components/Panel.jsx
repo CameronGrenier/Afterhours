@@ -1,6 +1,6 @@
 import { CircleX } from "lucide-react";
 import { useMediaQuery } from "../hooks/useMediaQuery";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 /**
  * Panel
@@ -27,9 +27,21 @@ import { useState } from "react";
  *
  * Note: open/closed state is internal. The panel always mounts closed.
  */
-export default function Panel({ header, children, icon, position }) {
+export default function Panel({ header, children, icon, position, ariaLabel }) {
   const isMobile = useMediaQuery("(max-width: 1300px)"); // tablet or below
   const [isOpen, setIsOpen] = useState(false);
+  const panelCloseButtonRef = useRef(null);
+  const panelOpenButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (panelCloseButtonRef.current || panelOpenButtonRef.current) {
+      if (isOpen) {
+        panelCloseButtonRef.current.focus();
+      } else {
+        panelOpenButtonRef.current.focus();
+      }
+    }
+  }, [isOpen])
 
   // Map the `position` prop to two sets of classes:
   //   panelPositionStyles            -> where the panel anchors + which border edge it draws
@@ -87,22 +99,18 @@ export default function Panel({ header, children, icon, position }) {
                   {/* min-w-0 lets the header shrink so truncate can clip it instead
                       of overflowing past the shrink-0 close icon */}
                   <div className="min-w-0 truncate">{header}</div>
-                  <CircleX
-                    className="mr-4 cursor-pointer shrink-0"
-                    size={40}
-                    onClick={() => setIsOpen(false)}
-                  />
+                  <button className={`mr-4 cursor-pointer shrink-0`} onClick={() => setIsOpen(false)} ref={panelCloseButtonRef} aria-label={`close ${ariaLabel}`}>
+                    <CircleX size={40} />
+                  </button>
                 </div>
               ) : (
                 // Desktop: close icon is absolutely positioned just outside the
                 // panel edge via desktopCloseIconPositionStyle.
                 <>
                   <div className="min-w-0 truncate">{header}</div>
-                  <CircleX
-                    className={`absolute mr-4 cursor-pointer ${desktopCloseIconPositionStyle} shrink-0`}
-                    size={40}
-                    onClick={() => setIsOpen(false)}
-                  />
+                  <button className={`absolute mr-4 cursor-pointer ${desktopCloseIconPositionStyle} shrink-0`} onClick={() => setIsOpen(false)} ref={panelCloseButtonRef} aria-label={`close ${ariaLabel}`}>
+                    <CircleX size={40} />
+                  </button>
                 </>
               )}
             </div>
@@ -112,9 +120,9 @@ export default function Panel({ header, children, icon, position }) {
           </>
         ) : (
           // Closed: render only the icon, which opens the panel on click.
-          <div className="p-4 cursor-pointer" onClick={() => setIsOpen(true)}>
+          <button className="p-4 cursor-pointer" onClick={() => setIsOpen(true)} ref={panelOpenButtonRef} aria-label={`open ${ariaLabel}`}>
             {icon}
-          </div>
+          </button>
         )}
       </aside>
     </>
