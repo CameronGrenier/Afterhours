@@ -5,6 +5,7 @@ import Panel from "../src/components/Panel.jsx"
 import PartyCode from "../src/components/PartyCode.jsx"
 import MemberItem from "../src/components/MemberItem.jsx";
 import Input from "../src/components/Input.jsx";
+import Surface from "../src/components/Surface.jsx";
 import Button from "../src/components/Button.jsx";
 
 export default function TestPage() {
@@ -36,10 +37,12 @@ export default function TestPage() {
       <div className="w-full flex justify-center items-center">
         <div className="w-[500px] flex flex-col gap-4">
           <PartyCode partyCode={"ABCD"} isCompact = {false} />
-          <div className="flex flex-col items-center gap-2 bg-white w-full p-2 rounded-md border-2">
-              <Input type="text" placeholderText="Username" onChange={setInputValue}/>
-              <Button variant="dark" ariaLabel="Create Party" onClick={() => alert(`username: ${inputValue}`)}>Join Party</Button>
-          </div>
+            <Surface>
+                <div className="flex flex-col items-center gap-2 w-full">
+                    <Input type="text" placeholderText="Username" onChange={setInputValue} />
+                    <Button variant="dark" ariaLabel="Create Party" onClick={() => alert(`username: ${inputValue}`)}>Join Party</Button>
+                </div>
+            </Surface>
         </div>
       </div>
     </main>
