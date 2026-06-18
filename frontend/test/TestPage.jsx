@@ -19,7 +19,7 @@ export default function TestPage() {
         header={
           <div className="w-full h-full flex justify-between items-center font-bold text-4xl tracking-tight px-5 py-4">
             <h1>Members</h1>
-            <h1>4</h1>
+            <p>4</p>
           </div>
         }
         icon = {<Users size={40}/>}
