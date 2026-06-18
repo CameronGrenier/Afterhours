@@ -4,6 +4,7 @@ import "../src/components/MemberItem.jsx"
 import MemberItem from "../src/components/MemberItem.jsx";
 import { Users } from 'lucide-react'
 import '../src/index.css'
+import Input from "../src/components/Input.jsx";
 
 export default function TestPage() {
   return (
@@ -29,6 +30,9 @@ export default function TestPage() {
         </div>
       </Panel>
       <PartyCode partyCode={"ABCD"} isCompact = {false} />
+      <div className="bg-white border-blacl mx-auto w-[90vw] max-w-[420px] mt-5 p-2 rounded-md border-2">
+          <Input placeholderText="Input"/>
+      </div>
     </main>
   );
 }
