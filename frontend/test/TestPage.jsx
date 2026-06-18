@@ -6,6 +6,7 @@ import MemberItem from "../src/components/MemberItem.jsx";
 import { Users } from 'lucide-react'
 import '../src/index.css'
 import Input from "../src/components/Input.jsx";
+import Surface from "../src/components/Surface.jsx";
 
 export default function TestPage() {
   const [inputValue, setInputValue] = useState("");
@@ -36,15 +37,17 @@ export default function TestPage() {
       <div className="w-full flex justify-center items-center">
         <div className="w-[500px] flex flex-col gap-4">
           <PartyCode partyCode={"ABCD"} isCompact = {false} />
-          <div className="flex flex-col items-center gap-2 bg-white w-full p-2 rounded-md border-2">
-              <Input type="text" placeholderText="Username" onChange={setInputValue}/>
-              <button 
-                className="w-full bg-black text-2xl border-2 border-black font-medium py-3 rounded-md cursor-pointer hover:bg-white hover:text-black transition-colors duration-200"
-                onClick={() => alert(`Input value: ${inputValue}`)}
-              >
-                Join
-              </button>
-          </div>
+            <Surface>
+                <div className="flex flex-col items-center gap-2 w-full">
+                    <Input type="text" placeholderText="Username" onChange={setInputValue} />
+                    <button
+                        className="w-full rounded-md border-2 text-white border-black bg-black py-3 text-2xl font-medium cursor-pointer transition-colors duration-200 hover:bg-white hover:text-black"
+                        onClick={() => alert(`Input value: ${inputValue}`)}
+                    >
+                        Join
+                    </button>
+                </div>
+            </Surface>
         </div>
       </div>
     </main>
