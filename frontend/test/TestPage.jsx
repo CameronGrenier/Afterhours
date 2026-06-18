@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import Panel from "../src/components/Panel.jsx"
 import PartyCode from "../src/components/PartyCode.jsx"
 import "../src/components/MemberItem.jsx"
@@ -7,6 +8,8 @@ import '../src/index.css'
 import Input from "../src/components/Input.jsx";
 
 export default function TestPage() {
+  const [inputValue, setInputValue] = useState("");
+
   return (
     <main className="h-screen w-screen bg-black text-white">
       <h1 className="text-3xl font-bold">Test Page</h1>
@@ -29,9 +32,20 @@ export default function TestPage() {
           <PartyCode partyCode={"ABCD"} isCompact = {true} position={"br"} />
         </div>
       </Panel>
-      <PartyCode partyCode={"ABCD"} isCompact = {false} />
-      <div className="bg-white border-blacl mx-auto w-[90vw] max-w-[420px] mt-5 p-2 rounded-md border-2">
-          <Input placeholderText="Input"/>
+
+      <div className="w-full flex justify-center items-center">
+        <div className="w-[500px] flex flex-col gap-4">
+          <PartyCode partyCode={"ABCD"} isCompact = {false} />
+          <div className="flex flex-col items-center gap-2 bg-white w-full p-2 rounded-md border-2">
+              <Input type="text" placeholderText="Username" onChange={setInputValue}/>
+              <button 
+                className="w-full bg-black text-2xl border-2 border-black font-medium py-3 rounded-md cursor-pointer hover:bg-white hover:text-black transition-colors duration-200"
+                onClick={() => alert(`Input value: ${inputValue}`)}
+              >
+                Join
+              </button>
+          </div>
+        </div>
       </div>
     </main>
   );

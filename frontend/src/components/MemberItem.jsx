@@ -4,7 +4,7 @@ import kickPlayerIcon from "../assets/icons/KickPlayer.svg";
 
 // TODO: Replace this stub with the real backend call when the endpoint exists.
 function onKick(username) {
-  alert("Kicked Player:", username);
+  alert(`Kicked Player: ${username}`);
 }
 
 function MemberItem({ username }) {
