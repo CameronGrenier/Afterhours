@@ -40,7 +40,7 @@ export default function TestPage() {
           <Surface>
             <div className="flex flex-col items-center gap-2 w-full">
               <Input type="text" placeholderText="Username" onChange={setInputValue} />
-              <Button variant="danger" ariaLabel="Create Party" onClick={() => alert(`username: ${inputValue}`)}>Join Party</Button>
+              <Button variant="dark" ariaLabel="Create Party" onClick={() => alert(`username: ${inputValue}`)}>Join Party</Button>
             </div>
           </Surface>
         </div>
