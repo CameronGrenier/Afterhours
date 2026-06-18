@@ -37,12 +37,12 @@ export default function TestPage() {
       <div className="w-full flex justify-center items-center">
         <div className="w-[500px] flex flex-col gap-4">
           <PartyCode partyCode={"ABCD"} isCompact = {false} />
-            <Surface>
-                <div className="flex flex-col items-center gap-2 w-full">
-                    <Input type="text" placeholderText="Username" onChange={setInputValue} />
-                    <Button variant="dark" ariaLabel="Create Party" onClick={() => alert(`username: ${inputValue}`)}>Join Party</Button>
-                </div>
-            </Surface>
+          <Surface>
+            <div className="flex flex-col items-center gap-2 w-full">
+              <Input type="text" placeholderText="Username" onChange={setInputValue} />
+              <Button variant="danger" ariaLabel="Create Party" onClick={() => alert(`username: ${inputValue}`)}>Join Party</Button>
+            </div>
+          </Surface>
         </div>
       </div>
     </main>

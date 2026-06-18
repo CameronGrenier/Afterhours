@@ -17,8 +17,8 @@ let base, hover, focus;
       focus = "focus-visible:bg-white focus-visible:text-black focus-visible:border-black";
       break;
     case "light":
-      base  = "bg-black text-white border-white";
-      hover = "hover:bg-black hover:text-white hover:border-black";
+      base  = "bg-white text-black border-black";
+      hover = "ho   ver:bg-black hover:text-white hover:border-black";
       focus = "focus-visible:bg-black focus-visible:text-white focus-visible:border-black";
       break;
     case "danger":
