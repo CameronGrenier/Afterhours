@@ -1,11 +1,11 @@
+import '../src/index.css'
+import { Users } from 'lucide-react'
 import React, { useState } from "react";
 import Panel from "../src/components/Panel.jsx"
 import PartyCode from "../src/components/PartyCode.jsx"
-import "../src/components/MemberItem.jsx"
 import MemberItem from "../src/components/MemberItem.jsx";
-import { Users } from 'lucide-react'
-import '../src/index.css'
 import Input from "../src/components/Input.jsx";
+import Button from "../src/components/Button.jsx";
 
 export default function TestPage() {
   const [inputValue, setInputValue] = useState("");
@@ -38,12 +38,7 @@ export default function TestPage() {
           <PartyCode partyCode={"ABCD"} isCompact = {false} />
           <div className="flex flex-col items-center gap-2 bg-white w-full p-2 rounded-md border-2">
               <Input type="text" placeholderText="Username" onChange={setInputValue}/>
-              <button 
-                className="w-full bg-black text-2xl border-2 border-black font-medium py-3 rounded-md cursor-pointer hover:bg-white hover:text-black transition-colors duration-200"
-                onClick={() => alert(`Input value: ${inputValue}`)}
-              >
-                Join
-              </button>
+              <Button variant="dark" ariaLabel="Create Party" onClick={() => alert(`username: ${inputValue}`)}>Join Party</Button>
           </div>
         </div>
       </div>
