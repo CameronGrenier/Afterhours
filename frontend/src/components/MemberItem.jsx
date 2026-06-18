@@ -10,6 +10,7 @@ function onKick(username) {
 function MemberItem({ username }) {
   const [isKickState, setIsKickState] = useState(false);
   const memberRef = useRef(null);
+  const kickButtonRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -22,15 +23,29 @@ function MemberItem({ username }) {
   }, []);
 
   return (
-    <div ref={memberRef} className="relative overflow-hidden font-bold text-4xl tracking-tight">
+    <div 
+      ref={memberRef} 
+      className="relative overflow-hidden font-bold text-4xl tracking-tight"
+      onBlur={(e) => {
+        // when the user tabs out of the member item, close the kick state
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          setIsKickState(false);
+        }
+      }}  
+    >
       <button
         type="button"
-        className="flex w-full justify-between items-center px-5 py-5 bg-black text-white cursor-pointer"
-        onClick={() => setIsKickState(true)}
+        className="flex w-full justify-between items-center px-5 py-5 bg-black text-white cursor-pointer focus-visible:bg-white focus-visible:text-black"
+        onClick={() => {
+          // when the user clicks the member item, open the kick state
+          // if using the keyboard, focus the kick button right away
+          setIsKickState(true);
+          kickButtonRef.current?.focus({preventScroll: true});
+        }}
       >
         <span className="truncate min-w-0 mr-4">{username}</span>
         <div className="h-[0.7em] shrink-0">
-          <img src={kickPlayerIcon} alt="Kick player" className="h-full" />
+          <img src={kickPlayerIcon} alt="Kick player" className="h-full mix-blend-difference" />
         </div>
       </button>
 
@@ -41,6 +56,8 @@ function MemberItem({ username }) {
           type="button"
           className="flex-1 flex justify-center items-center cursor-pointer"
           onClick={() => onKick(username)}
+          tabIndex={isKickState ? 0 : -1}
+          ref={kickButtonRef}
         >
           Kick?
         </button>
@@ -49,6 +66,7 @@ function MemberItem({ username }) {
           className="cursor-pointer"
           onClick={() => setIsKickState(false)}
           aria-label={`Cancel kick for ${username}`}
+          tabIndex={isKickState ? 0 : -1}
         >
           <CircleX className="w-10 h-10" />
         </button>
