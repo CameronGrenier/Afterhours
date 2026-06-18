@@ -12,7 +12,7 @@ export default function TestPage() {
   const [inputValue, setInputValue] = useState("");
 
   return (
-    <main className="h-screen w-screen bg-black text-white">
+    <main className="h-screen w-screen bg-black text-white overflow-hidden">
       <h1 className="text-3xl font-bold">Test Page</h1>
       <p className="max-w-8/10">This is a testing page for any component a developer is working on.</p>
       <Panel
@@ -25,12 +25,16 @@ export default function TestPage() {
         icon = {<Users size={40}/>}
         position="tr"
       >
-        <div className="flex flex-col">
+        <div className="relative flex flex-col pb-24">
           <MemberItem username={"AdamSandler"}/>
           <MemberItem username={"MatureAdult"}/>
           <MemberItem username={"FunnyUsername"}/>
           <MemberItem username={"Batman"}/>
-          <PartyCode partyCode={"ABCD"} isCompact = {true} position={"br"} />
+          <MemberItem username={"FunnyUsername2"}/>
+          <MemberItem username={"Spiderman"}/>
+          <MemberItem username={"Alec Baldwin"}/>
+          <MemberItem username={"UrMom"}/>
+          <PartyCode partyCode={"ABCD"} isCompact = {true} position={"br"}/>
         </div>
       </Panel>
 

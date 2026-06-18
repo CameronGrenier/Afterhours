@@ -15,6 +15,7 @@ import { useState, useRef, useEffect } from "react";
  *     inside the header, right-aligned.
  *
  * Props:
+ *   @param {string} className         Additional CSS classes to apply to the panel.
  *   @param {React.ReactNode} header   Content shown in the header bar when open.
  *                                     Truncates with an ellipsis if too wide.
  *   @param {React.ReactNode} children Body content shown below the header when open.
@@ -28,7 +29,7 @@ import { useState, useRef, useEffect } from "react";
  *
  * Note: open/closed state is internal. The panel always mounts closed.
  */
-export default function Panel({ header, children, icon, position, ariaLabel }) {
+export default function Panel({ className, header, children, icon, position, ariaLabel }) {
   const isMobile = useMediaQuery("(max-width: 1300px)");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -112,8 +113,8 @@ export default function Panel({ header, children, icon, position, ariaLabel }) {
   // -------------------------------------------------------------------------
   // Style variants for the three panel states.
   // -------------------------------------------------------------------------
-  const panelOpenMobileStyles = `absolute ${panelPositionStyles} w-screen h-screen bg-black !border-0`;
-  const panelOpenDesktopStyles = `absolute ${panelPositionStyles} w-1/4 max-w-[450px] h-screen bg-black border-white`;
+  const panelOpenMobileStyles = `absolute ${panelPositionStyles} w-screen bg-black !border-0`;
+  const panelOpenDesktopStyles = `absolute ${panelPositionStyles} w-1/4 max-w-[450px] bg-black border-white`;
   const panelClosedStyles = `absolute ${panelPositionStyles} !border-0`;
 
   return (
@@ -127,7 +128,7 @@ export default function Panel({ header, children, icon, position, ariaLabel }) {
 
       <aside
         ref={asideRef}
-        className={`${isOpen ? (isMobile ? panelOpenMobileStyles : panelOpenDesktopStyles) : panelClosedStyles} z-[9999]`}
+        className={`${isOpen ? (isMobile ? panelOpenMobileStyles : panelOpenDesktopStyles) : panelClosedStyles} ${className} z-[9999] h-screen overflow-y-auto`}
       >
         {isOpen ? (
           <>

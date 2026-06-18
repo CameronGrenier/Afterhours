@@ -72,7 +72,7 @@ function PartyCode( { partyCode, isCompact = false, position = "bl" } ) {
     }
 
     return (
-        <div className={`absolute ${partyCodePositionStyles} flex min-h-[60px] min-w-[180px] px-8 py-4 items-center justify-center border-white bg-black`}>
+        <div className={`fixed ${partyCodePositionStyles} flex min-h-[60px] min-w-[180px] px-8 py-4 items-center justify-center border-white bg-black`}>
             <span className={`absolute ${partyCodeLabelStyles} left-1/2 z-10 -translate-x-1/2 whitespace-nowrap text-[clamp(0.6rem,3vmin,1rem)] font-bold leading-tight text-white`}>
                 Party Code
             </span>
