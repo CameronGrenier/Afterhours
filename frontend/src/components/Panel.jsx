@@ -32,6 +32,31 @@ export default function Panel({ header, children, icon, position, ariaLabel }) {
   const [isOpen, setIsOpen] = useState(false);
   const panelCloseButtonRef = useRef(null);
   const panelOpenButtonRef = useRef(null);
+  const asideRef = useRef(null);
+  const backdropRef = useRef(null);
+
+  // Inert all siblings when panel is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const aside = asideRef.current;
+    const parent = aside?.parentElement;
+    if (!parent) return;
+
+    const panelOwned = [aside, backdropRef.current];
+    const inerted = [];
+
+    for (const child of parent.children) {
+      if (!panelOwned.includes(child) && !child.hasAttribute("inert")) {
+        child.setAttribute("inert", "");
+        inerted.push(child);
+      }
+    }
+
+    return () => {
+      for (const el of inerted) el.removeAttribute("inert");
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (panelCloseButtonRef.current || panelOpenButtonRef.current) {
@@ -41,7 +66,7 @@ export default function Panel({ header, children, icon, position, ariaLabel }) {
         panelOpenButtonRef.current.focus();
       }
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   // Map the `position` prop to two sets of classes:
   //   panelPositionStyles            -> where the panel anchors + which border edge it draws
@@ -83,10 +108,14 @@ export default function Panel({ header, children, icon, position, ariaLabel }) {
       {/* Backdrop blur. Desktop-only, and only while open. Sits one z-layer
           below the panel so the panel stays sharp on top. */}
       {isOpen && !isMobile && (
-        <div className="absolute top-0 left-0 w-screen h-screen backdrop-blur-sm z-[9998]" />
+        <div
+          ref={backdropRef}
+          className="absolute top-0 left-0 w-screen h-screen backdrop-blur-sm z-[9998]"
+        />
       )}
 
       <aside
+        ref={asideRef}
         className={`${isOpen ? (isMobile ? panelOpenMobileStyles : panelOpenDesktopStyles) : panelClosedStyles} z-[9999]`}
       >
         {isOpen ? (
@@ -99,7 +128,12 @@ export default function Panel({ header, children, icon, position, ariaLabel }) {
                   {/* min-w-0 lets the header shrink so truncate can clip it instead
                       of overflowing past the shrink-0 close icon */}
                   <div className="min-w-0 truncate">{header}</div>
-                  <button className={`mr-4 cursor-pointer shrink-0`} onClick={() => setIsOpen(false)} ref={panelCloseButtonRef} aria-label={`close ${ariaLabel}`}>
+                  <button
+                    className={`mr-4 cursor-pointer shrink-0`}
+                    onClick={() => setIsOpen(false)}
+                    ref={panelCloseButtonRef}
+                    aria-label={`close ${ariaLabel}`}
+                  >
                     <CircleX size={40} />
                   </button>
                 </div>
@@ -108,7 +142,12 @@ export default function Panel({ header, children, icon, position, ariaLabel }) {
                 // panel edge via desktopCloseIconPositionStyle.
                 <>
                   <div className="min-w-0 truncate">{header}</div>
-                  <button className={`absolute mr-4 cursor-pointer ${desktopCloseIconPositionStyle} shrink-0`} onClick={() => setIsOpen(false)} ref={panelCloseButtonRef} aria-label={`close ${ariaLabel}`}>
+                  <button
+                    className={`absolute mr-4 cursor-pointer ${desktopCloseIconPositionStyle} shrink-0`}
+                    onClick={() => setIsOpen(false)}
+                    ref={panelCloseButtonRef}
+                    aria-label={`close ${ariaLabel}`}
+                  >
                     <CircleX size={40} />
                   </button>
                 </>
@@ -120,7 +159,12 @@ export default function Panel({ header, children, icon, position, ariaLabel }) {
           </>
         ) : (
           // Closed: render only the icon, which opens the panel on click.
-          <button className="p-4 cursor-pointer" onClick={() => setIsOpen(true)} ref={panelOpenButtonRef} aria-label={`open ${ariaLabel}`}>
+          <button
+            className="p-4 cursor-pointer"
+            onClick={() => setIsOpen(true)}
+            ref={panelOpenButtonRef}
+            aria-label={`open ${ariaLabel}`}
+          >
             {icon}
           </button>
         )}
