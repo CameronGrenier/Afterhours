@@ -128,7 +128,7 @@ export default function Panel({ className, header, children, icon, position, ari
 
       <aside
         ref={asideRef}
-        className={`${isOpen ? (isMobile ? panelOpenMobileStyles : panelOpenDesktopStyles) : panelClosedStyles} ${className} z-[9999] h-screen overflow-y-auto`}
+        className={`${isOpen ? (isMobile ? panelOpenMobileStyles : panelOpenDesktopStyles) : panelClosedStyles} ${className} flex flex-col z-[9999] h-screen`}
       >
         {isOpen ? (
           <>
@@ -162,11 +162,11 @@ export default function Panel({ className, header, children, icon, position, ari
               )}
             </div>
 
-            {children}
+            <div className="flex-1 h-min-0 overflow-y-auto">{children}</div>
           </>
         ) : (
           <button
-            className="p-4 cursor-pointer"
+            className="p-4 m-1 cursor-pointer"
             onClick={() => setIsOpen(true)}
             ref={panelOpenButtonRef}
             aria-label={`open ${ariaLabel}`}
