@@ -30,7 +30,7 @@ function PartyCode( { partyCode, isCompact = false, position = "bl" } ) {
                     Party Code
                 </h2>
 
-                <div className="rounded-md bg-white p-5">
+                <div className="rounded-md bg-white p-4">
                     <div className="rounded-md border-2 border-black px-5 py-4 text-center">
                         <span className="text-6xl font-bold text-black">
                             {partyCode}
