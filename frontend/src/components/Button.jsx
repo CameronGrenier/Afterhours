@@ -1,5 +1,3 @@
-import {playSound} from "../audio/playSound.jsx";
-
 /**
  * Button component used across the app for interactive actions.
  *
@@ -41,8 +39,6 @@ let base, hover, focus;
       className={`w-full rounded-md px-16 py-4 text-2xl font-bold border-2 cursor-pointer transition-colors duration-200 ${buttonStyle}`}
       aria-label={ariaLabel}
       onClick={onClick}
-      onPointerDown={() => playSound("buttonDown")}
-      onPointerUp={() => playSound("buttonUp")}
     >
     {children}
     </button>
