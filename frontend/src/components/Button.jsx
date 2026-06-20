@@ -1,46 +1,64 @@
 /**
- * Button component used across the app for interactive actions.
+ * Button Component
  *
- * Props:
- * - variant: style variation for the button (dark, light, danger).
- * - ariaLabel: accessibility label for the button.
- * - onClick: click handler function.
- * - children: button label or nested content.
+ * A reusable button element with multiple visual variants. Handles styling for
+ * different button types (primary dark, light, and danger) with consistent hover
+ * and focus states for accessibility.
+ *
+ * Variants:
+ *   - "dark" (default): Black background with white text, inverts on hover
+ *   - "light": White background with black text, inverts on hover
+ *   - "danger": Red background with white text, inverts on hover
+ *
+ * @param {string} variant - Button style variant ("dark", "light", or "danger")
+ * @param {string} ariaLabel - Accessibility label for screen readers
+ * @param {Function} onClick - Click event handler
+ * @param {React.ReactNode} children - Button label or nested content
+ * @returns {React.ReactNode} Button element
  */
 export default function Button({ variant, ariaLabel, onClick, children }) {
-  
-let base, hover, focus;
+  // =========================================================================
+  // Style Configuration
+  // =========================================================================
+  let base, hover, focus;
+
   switch (variant) {
     case "dark":
-      base  = "bg-black text-white border-white";
+      base = "bg-black text-white border-white";
       hover = "hover:bg-white hover:text-black hover:border-black";
       focus = "focus-visible:bg-white focus-visible:text-black focus-visible:border-black";
       break;
+
     case "light":
-      base  = "bg-white text-black border-black";
-      hover = "ho   ver:bg-black hover:text-white hover:border-black";
+      base = "bg-white text-black border-black";
+      hover = "hover:bg-black hover:text-white hover:border-black";
       focus = "focus-visible:bg-black focus-visible:text-white focus-visible:border-black";
       break;
+
     case "danger":
-      base  = "bg-danger text-white border-danger";
+      base = "bg-danger text-white border-danger";
       hover = "hover:bg-white hover:text-danger hover:border-danger";
       focus = "focus-visible:bg-white focus-visible:text-danger focus-visible:border-danger";
       break;
+
     default:
-      base  = "bg-black text-white border-white";
+      base = "bg-black text-white border-white";
       hover = "hover:bg-white hover:text-black hover:border-black";
       focus = "focus-visible:bg-white focus-visible:text-black focus-visible:border-black";
   }
 
   const buttonStyle = `${base} ${hover} ${focus}`;
 
+  // =========================================================================
+  // Render
+  // =========================================================================
   return (
     <button
       className={`w-full rounded-md px-16 py-4 text-2xl font-bold border-2 cursor-pointer transition-colors duration-200 ${buttonStyle}`}
       aria-label={ariaLabel}
       onClick={onClick}
     >
-    {children}
+      {children}
     </button>
   );
 }
