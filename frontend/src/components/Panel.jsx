@@ -32,6 +32,7 @@ import { useState, useRef, useEffect } from "react";
 export default function Panel({ className, header, children, icon, position, ariaLabel }) {
   const isMobile = useMediaQuery("(max-width: 1300px)");
   const [isOpen, setIsOpen] = useState(false);
+  const [panelHasBeenOpened, setPanelHasBeenOpened] = useState(false); // flag set on first open for accessibility
 
   const panelCloseButtonRef = useRef(null);
   const panelOpenButtonRef = useRef(null);
@@ -72,7 +73,7 @@ export default function Panel({ className, header, children, icon, position, ari
     if (panelCloseButtonRef.current || panelOpenButtonRef.current) {
       if (isOpen) {
         panelCloseButtonRef.current.focus();
-      } else {
+      } else if (panelHasBeenOpened) {
         panelOpenButtonRef.current.focus();
       }
     }
@@ -143,7 +144,7 @@ export default function Panel({ className, header, children, icon, position, ari
                     ref={panelCloseButtonRef}
                     aria-label={`close ${ariaLabel}`}
                   >
-                    <CircleX size={40} />
+                    <CircleX size={40} color="#ffffff"/>
                   </button>
                 </div>
               ) : (
@@ -156,7 +157,7 @@ export default function Panel({ className, header, children, icon, position, ari
                     ref={panelCloseButtonRef}
                     aria-label={`close ${ariaLabel}`}
                   >
-                    <CircleX size={40} />
+                    <CircleX size={40} color="#ffffff"/>
                   </button>
                 </>
               )}
@@ -167,7 +168,10 @@ export default function Panel({ className, header, children, icon, position, ari
         ) : (
           <button
             className="p-4 m-1 cursor-pointer"
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              setIsOpen(true);
+              setPanelHasBeenOpened(true);
+            }}
             ref={panelOpenButtonRef}
             aria-label={`open ${ariaLabel}`}
           >
