@@ -1,12 +1,12 @@
-import '../src/index.css'
+import '@/index.css'
 import { Users } from 'lucide-react'
 import React, { useState } from "react";
-import Panel from "../src/components/Panel.jsx"
-import PartyCode from "../src/components/PartyCode.jsx"
-import MemberItem from "../src/components/MemberItem.jsx";
-import Input from "../src/components/Input.jsx";
-import Surface from "../src/components/Surface.jsx";
-import Button from "../src/components/Button.jsx";
+import Panel from "../../components/Panel.jsx"
+import PartyCode from "@/components/PartyCode.jsx"
+import MemberItem from "@/components/MemberItem.jsx";
+import Input from "@/components/Input.jsx";
+import Surface from "@/components/Surface.jsx";
+import Button from "@/components/Button.jsx";
 
 export default function TestPage() {
   const [inputValue, setInputValue] = useState("");
