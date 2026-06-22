@@ -1,10 +1,41 @@
 import { soundCatalog } from "./soundCatalog.jsx";
 
-const audioCache = new Map()
+const AUDIO_POOL_SIZE = 3;
+const audioCache = new Map();
+const audioPoolIndex = new Map();
+
+function createAudioPool(src) {
+    return Array.from({ length: AUDIO_POOL_SIZE }, () => {
+        const audio = new Audio(src);
+        audio.preload = "auto";
+        audio.load();
+        return audio;
+    });
+}
+
+for (const [name, sound] of Object.entries(soundCatalog)) {
+    audioCache.set(name, createAudioPool(sound.src));
+    audioPoolIndex.set(name, 0);
+}
 
 // No ear rape
 function clampVolume(value) {
     return Math.max(0, Math.min(1, value));
+}
+
+function getNextAudio(name, src) {
+    let audioPool = audioCache.get(name);
+
+    if (audioPool == null) {
+        audioPool = createAudioPool(src);
+        audioCache.set(name, audioPool);
+        audioPoolIndex.set(name, 0);
+    }
+
+    const nextIndex = audioPoolIndex.get(name) ?? 0;
+    audioPoolIndex.set(name, (nextIndex + 1) % audioPool.length);
+
+    return audioPool[nextIndex];
 }
 
 /**
@@ -18,15 +49,9 @@ export function playSound(name, volumeOverride) {
     const sound = soundCatalog[name];
     if (!sound) return;
 
-    let audio = audioCache.get(name);
+    const audio = getNextAudio(name, sound.src);
 
-    if (audio == null) {
-        audio = new Audio(sound.src);
-        audio.preload = "auto"
-        audioCache.set(name, audio);
-    }
-
-    audio.volume = clampVolume(volumeOverride ?? sound.volume, 1);
+    audio.volume = clampVolume(volumeOverride ?? sound.volume ?? 1);
     audio.currentTime = 0;
 
     void audio.play().catch(() => {});
