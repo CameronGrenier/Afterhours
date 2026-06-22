@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import "./index.css";
-import App from "./App.jsx";
-import TestPage from "../test/TestPage.jsx";
+import App from "./pages/home/App.jsx";
+import TestPage from "./pages/test/TestPage.jsx";
 
 /**
  * Application Entry Point
