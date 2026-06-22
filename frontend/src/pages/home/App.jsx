@@ -29,7 +29,7 @@ export default function App() {
   // =========================================================================
   // Media Queries
   // =========================================================================
-  const isMobile = useMediaQuery("(max-width: 768px), (max-height: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const isMobileLandscape =
     useMediaQuery("(orientation: landscape)") && isMobile;
 
