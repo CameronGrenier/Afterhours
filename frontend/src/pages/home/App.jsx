@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Bolt, Undo2 } from "lucide-react";
 
 // Background topology images with responsive variants
@@ -11,10 +11,13 @@ import topoUltrawide from "@/assets/Images/topology_bg_images/topology-ultrawide
 // Components and hooks
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import Panel from "@/components/Panel";
+import { setMusicVolume, setSfxVolume } from "@/lib/audio/audioSettings.js";
+import { startLobbyMusic, stopLobbyMusic } from "@/lib/audio/lobbyMusicPlayer.js";
 
 import HomeScreen from "./HomeScreen.jsx";
 import JoinScreen from "./JoinScreen.jsx";
 import LobbyScreen from "./LobbyScreen.jsx";
+import Slider from "@/components/Slider.jsx";
 
 /**
  * Main App Component
@@ -27,7 +30,7 @@ export default function App() {
   // =========================================================================
   // Media Queries
   // =========================================================================
-  const isMobile = useMediaQuery("(max-width: 768px), (max-height: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const isMobileLandscape =
     useMediaQuery("(orientation: landscape)") && isMobile;
 
@@ -45,6 +48,8 @@ export default function App() {
   // Refs
   // =========================================================================
   const mainRef = useRef(null);
+  const [sfxVolume, setSfxVolumeValue] = useState(50);
+  const [musicVolume, setMusicVolumeValue] = useState(50);
 
   // =========================================================================
   // Event Handlers
@@ -153,6 +158,36 @@ export default function App() {
       .replace(/\s+/g, ""); // Strip all spaces
   }
 
+  useEffect(() => {
+    setSfxVolume(sfxVolume / 100);
+  }, [sfxVolume]);
+
+  useEffect(() => {
+    setMusicVolume(musicVolume / 100);
+  }, [musicVolume]);
+
+  useEffect(() => {
+    if (isMobile) {
+      stopLobbyMusic();
+      return;
+    }
+
+    function unlockLobbyMusic() {
+      void startLobbyMusic();
+    }
+
+    window.addEventListener("pointerdown", unlockLobbyMusic, { once: true });
+    window.addEventListener("keydown", unlockLobbyMusic, { once: true });
+
+    void startLobbyMusic();
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockLobbyMusic);
+      window.removeEventListener("keydown", unlockLobbyMusic);
+      stopLobbyMusic();
+    };
+  }, [isMobile]);
+
   return (
     <main
       className="relative w-screen h-dvh px-8 flex flex-col items-center justify-center bg-black overflow-hidden"
@@ -200,7 +235,20 @@ export default function App() {
             Settings
           </div>
         }
-      />
+      >
+       <Slider
+         sliderTitle="SoundsFx Volume"
+         value={sfxVolume}
+         onChange={setSfxVolumeValue}
+       />
+       {!isMobile && (
+         <Slider
+           sliderTitle="Music Volume"
+           value={musicVolume}
+           onChange={setMusicVolumeValue}
+         />
+       )}
+      </Panel>
 
       {/* =====================================================================
           Main Content Area
