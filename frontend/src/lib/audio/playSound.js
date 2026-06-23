@@ -1,4 +1,5 @@
-import { soundCatalog } from "./soundCatalog.jsx";
+import { clampVolume, getSfxVolume } from "./audioSettings.js";
+import { soundCatalog } from "./soundCatalog.js";
 
 const AUDIO_POOL_SIZE = 3;
 const audioCache = new Map();
@@ -16,11 +17,6 @@ function createAudioPool(src) {
 for (const [name, sound] of Object.entries(soundCatalog)) {
     audioCache.set(name, createAudioPool(sound.src));
     audioPoolIndex.set(name, 0);
-}
-
-// No ear rape
-function clampVolume(value) {
-    return Math.max(0, Math.min(1, value));
 }
 
 function getNextAudio(name, src) {
@@ -51,7 +47,7 @@ export function playSound(name, volumeOverride) {
 
     const audio = getNextAudio(name, sound.src);
 
-    audio.volume = clampVolume(volumeOverride ?? sound.volume ?? 1);
+    audio.volume = clampVolume((volumeOverride ?? sound.volume ?? 1) * getSfxVolume());
     audio.currentTime = 0;
 
     void audio.play().catch(() => {});
