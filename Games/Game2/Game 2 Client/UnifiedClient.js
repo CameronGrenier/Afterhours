@@ -13,7 +13,7 @@ let activeGameID = null;
 let activeGame = null;
 let menuAbortController = null; // Used to cancel pending menu inputs
 
-const SERVER_BASE = 'http://127.0.0.1:8000';
+const SERVER_BASE = 'http://3.136.225.250:8000';
 
 // --- Initialize Socket & Readline ---
 const socket = io(SERVER_BASE);

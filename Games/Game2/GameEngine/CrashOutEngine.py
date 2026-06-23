@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Dict, Any
 import asyncio
 import time
-from Games.GameEngine.PlayerClass import PlayerClass
+from Games.Game2.GameEngine.PlayerClass import PlayerClass
 import random
 #games should pivot from HTTP requests to Websocket data. This works great as all users will be synced up.
 class Phases(Enum):

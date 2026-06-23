@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, Any
 
-from Games.GameEngine.CrashOutEngine import CrashOutEngine
+from Games.Game2.GameEngine.CrashOutEngine import CrashOutEngine
 #Assistant Enum classes to limit the bounds of what states and games can be.
 class RoomStates(Enum):
     EMPTY = "Empty"

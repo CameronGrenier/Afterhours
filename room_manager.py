@@ -118,16 +118,16 @@ async def select_game(request: RoomGameRequest):
         #Tell everyone in the lobby what the game is
         await sio.emit('lobby_update',{'game':set_game.value}, room=code)
         return {"status":"success", "message": f"Game for room {code} is {room.game.value}", "game":f"{room.game.value}"}
-    return{"status": "error", "message": f"Game room {code} does not exist"}
+    return{"status": "codeError", "message": f"Game room {code} does not exist"}
 @app.post("/start_game")
 async def start_game(request: RoomGameRequest):
     code = request.code
     room = active_rooms[code]
     if not room:
-        return {"status": "error", "message": "Room not found"}
+        return {"status": "codeError", "message": "Room not found"}
     status = await room.start_game()
     if status == "Error":
-        return {"status": "error, not enough players to start the selected game"}
+        return {"status": "error","message":"not enough players to start the selected game"}
     return {"status": "success"}
 @app.post("/game_event")
 async def handle_event(request:GameEvent):
@@ -170,7 +170,7 @@ async def leave_room(request: RoomData):
                 await sio.emit('player_left',{'all_players': active_rooms[code].players, 'username':username}, room=code)
             return {"status": "success", "message": f"{username} has been successfully removed from room {code}"}
         else:
-            return {"status": "error, for some reason unable to remove player from the room."}
+            return {"status": "error", "message":"for some reason unable to remove player from the room."}
     else:
         return{"status":"codeError"}
 
@@ -188,11 +188,6 @@ async def disconnect(sid):
         await sio.emit('player_left',{'username':username,'all_players': active_rooms[room_code].players})
         del sid_to_rooms[sid] #Remove it from the data structure
 
-@sio.event
-async def join_game_socket(sid,data):
-    code = data["code"]
-    print(f"Socket {sid} joined the room {code}")
-
 
 @sio.on('game_action')
 async def handle_game_action(sid, payload):
@@ -202,7 +197,7 @@ async def handle_game_action(sid, payload):
     room_code = sid_to_rooms[sid]
     room = active_rooms[room_code]
     if not room:
-        return {"status": "error", "message": "Room not found"}
+        return {"status": "codeError", "message": "Room not found"}
     player_username = sid_to_username[sid]
     #Local data is returned to the sender of the socket request (client) this is private info, used for local UI updates
     #broadcast_data is broadcasted to all clients in this game room / instance. This is public data to be acknoledged or seen by all players.
