@@ -9,7 +9,8 @@ import { Info } from "lucide-react";
  * @param {() => void} handlePlay - Called when the card is clicked
  * @returns {React.ReactNode} Game card
  */
-export default function GameCard({ name, imgSrc, handleInfo, handlePlay }) {
+
+function Gamecard({ name, imgSrc, handleInfo, handlePlay }) {
   function onInfoClick(event) {
     event.stopPropagation();
     handleInfo?.(name);
@@ -27,7 +28,7 @@ export default function GameCard({ name, imgSrc, handleInfo, handlePlay }) {
         }}
       >
         <div className="relative z-10 flex h-full items-start p-4 sm:p-5 md:p-6">
-          <h2 className="max-w-[72%] font-sans text-[clamp(2.75rem,6vw,4rem)] leading-none font-bold tracking-tight text-[#FFE14A] drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
+          <h2 className="max-w-[72%] font-sans text-[clamp(2.75rem,6vw,4rem)] leading-none font-bold tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
             {name}
           </h2>
         </div>
@@ -48,3 +49,5 @@ export default function GameCard({ name, imgSrc, handleInfo, handlePlay }) {
     </div>
   );
 }
+
+export default Gamecard;
