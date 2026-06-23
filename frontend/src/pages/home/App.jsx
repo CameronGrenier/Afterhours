@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Bolt, Undo2 } from "lucide-react";
 
 // Background topology images with responsive variants
@@ -40,16 +40,17 @@ export default function App() {
   const [screen, setScreen] = useState("home"); // Current screen: 'home', 'join', 'lobby'
   const [partyCode, setPartyCode] = useState(""); // Party code entered by user
   const [username, setUsername] = useState(""); // Formatted username
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState([]); // array of player usernames
 
   const [mainDimensions, setMainDimensions] = useState(null);
+
+  const [sfxVolume, setSfxVolumeValue] = useState(50);
+  const [musicVolume, setMusicVolumeValue] = useState(50);
 
   // =========================================================================
   // Refs
   // =========================================================================
   const mainRef = useRef(null);
-  const [sfxVolume, setSfxVolumeValue] = useState(50);
-  const [musicVolume, setMusicVolumeValue] = useState(50);
 
   // =========================================================================
   // Event Handlers
