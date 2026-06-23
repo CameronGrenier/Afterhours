@@ -30,7 +30,7 @@ function PartyCode({ partyCode, isCompact = false, position = "bl" }) {
     return (
       <div className="mx-auto w-full">
         {/* Section Title */}
-        <h2 className="mb-4 text-center text-4xl font-bold text-white">
+        <h2 className="mb-4 text-center text-2xl md:text-4xl font-bold text-white">
           Party Code
         </h2>
 
@@ -38,7 +38,7 @@ function PartyCode({ partyCode, isCompact = false, position = "bl" }) {
         <div className="rounded-md bg-white p-4">
           <div className="rounded-md border-2 border-black px-5 py-4 text-center">
             {/* Code Display */}
-            <span className="text-6xl font-bold text-black">
+            <span className="text-4xl md:text-6xl font-bold text-black uppercase">
               {partyCode}
             </span>
           </div>
@@ -57,28 +57,33 @@ function PartyCode({ partyCode, isCompact = false, position = "bl" }) {
 
   switch (position) {
     case "bl":
-      partyCodePositionStyles = "bottom-0 left-0 border-t-2 border-r-2 rounded-tr-2xl";
+      partyCodePositionStyles =
+        "bottom-0 left-0 border-t-2 border-r-2 rounded-tr-2xl";
       partyCodeLabelStyles = "bottom-full mb-1";
       break;
 
     case "br":
-      partyCodePositionStyles = "bottom-0 right-0 border-t-2 border-l-2 rounded-tl-2xl";
+      partyCodePositionStyles =
+        "bottom-0 right-0 border-t-2 border-l-2 rounded-tl-2xl";
       partyCodeLabelStyles = "bottom-full mb-1";
       break;
 
     case "tl":
-      partyCodePositionStyles = "top-0 left-0 border-b-2 border-r-2 rounded-br-2xl";
+      partyCodePositionStyles =
+        "top-0 left-0 border-b-2 border-r-2 rounded-br-2xl";
       partyCodeLabelStyles = "top-full mt-1";
       break;
 
     case "tr":
-      partyCodePositionStyles = "top-0 right-0 border-b-2 border-l-2 rounded-bl-2xl";
+      partyCodePositionStyles =
+        "top-0 right-0 border-b-2 border-l-2 rounded-bl-2xl";
       partyCodeLabelStyles = "top-full mt-1";
       break;
 
     default:
       // Default to bottom-left
-      partyCodePositionStyles = "bottom-0 left-0 border-t-2 border-r-2 rounded-tr-2xl";
+      partyCodePositionStyles =
+        "bottom-0 left-0 border-t-2 border-r-2 rounded-tr-2xl";
       partyCodeLabelStyles = "bottom-full mb-1";
   }
 

@@ -16,6 +16,7 @@ import { startLobbyMusic, stopLobbyMusic } from "@/lib/audio/lobbyMusicPlayer.js
 
 import HomeScreen from "./HomeScreen.jsx";
 import JoinScreen from "./JoinScreen.jsx";
+import LobbyScreen from "./LobbyScreen.jsx";
 import Slider from "@/components/Slider.jsx";
 
 /**
@@ -39,12 +40,36 @@ export default function App() {
   const [screen, setScreen] = useState("home"); // Current screen: 'home', 'join', 'lobby'
   const [partyCode, setPartyCode] = useState(""); // Party code entered by user
   const [username, setUsername] = useState(""); // Formatted username
+  const [players, setPlayers] = useState([]);
+
+  const [mainDimensions, setMainDimensions] = useState(null);
+
+  // =========================================================================
+  // Refs
+  // =========================================================================
+  const mainRef = useRef(null);
   const [sfxVolume, setSfxVolumeValue] = useState(50);
   const [musicVolume, setMusicVolumeValue] = useState(50);
 
   // =========================================================================
   // Event Handlers
   // =========================================================================
+
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+
+    // Re-measure whenever the box resizes (window resize, orientation flip,
+    // mobile URL-bar show/hide). The observer also fires once right after
+    // observe(), so this covers the initial measurement too — no separate
+    // getBoundingClientRect call needed on mount.
+    const observer = new ResizeObserver(() => {
+      setMainDimensions(el.getBoundingClientRect());
+    });
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
 
   /**
    * Handles user joining an existing party/lobby.
@@ -56,7 +81,25 @@ export default function App() {
   function handleJoinLobby() {
     const pascal = toPascalCase(username);
     setUsername(pascal);
-    alert(`user wants to join party ${partyCode} with username ${pascal}`);
+
+    // TODO: replace with backend API call
+    let playersFromServer = [
+      "AdamSandler",
+      "MatureAdult",
+      "SlimJim",
+      "UrMom",
+      pascal,
+      "Batman",
+      "Shaq",
+      "DwayneJohnson",
+      "GordonRamsay",
+    ]; // the list of players should come from the backend, including the current user
+
+    if (!playersFromServer || playersFromServer.length === 0) {
+      alert("Party could not be found. Recreate the party and try again.");
+    }
+    setPlayers(playersFromServer);
+    setScreen("lobby");
   }
 
   /**
@@ -66,9 +109,12 @@ export default function App() {
    * Currently triggers an alert; should be replaced with backend API call.
    */
   function handleCreateLobby() {
-    alert(
-      `user wants to create a lobby... handle the backend call to create a lobby now`,
-    );
+    // TODO: replace with backend API call
+    let code = "abcd"; // this should come from the backend
+    if (!code) {
+      alert("Party code could not be generated. Try again later.");
+    }
+    setPartyCode(code);
     setScreen("join");
   }
 
@@ -82,6 +128,10 @@ export default function App() {
     setScreen("home");
     setPartyCode("");
     setUsername("");
+  }
+
+  function handleStartRoom() {
+    alert("user wants to start the room");
   }
 
   // =========================================================================
@@ -139,7 +189,10 @@ export default function App() {
   }, [isMobile]);
 
   return (
-    <main className="relative w-screen h-dvh px-8 flex flex-col items-center justify-center bg-black overflow-hidden">
+    <main
+      className="relative w-screen h-dvh px-8 flex flex-col items-center justify-center bg-black overflow-hidden"
+      ref={mainRef}
+    >
       {/* =====================================================================
           Background Imagery
           ===================================================================== */}
@@ -200,29 +253,35 @@ export default function App() {
       {/* =====================================================================
           Main Content Area
           ===================================================================== */}
-      <div className="w-full max-w-[400px] flex flex-col gap-4 opacity-100 z-[3]">
-        <h1 className="text-4xl font-bold text-white font-display uppercase text-center leading-none">
-          afterhours
-        </h1>
 
-        {/* Render screen-specific content */}
-        {screen === "home" && (
-          <HomeScreen
-            isMobileLandscape={isMobileLandscape}
-            setPartyCode={setPartyCode}
-            setScreen={setScreen}
-            handleCreateLobby={handleCreateLobby}
-            handleJoinLobby={handleJoinLobby}
-          />
-        )}
-        {screen === "join" && (
-          <JoinScreen
-            setUsername={setUsername}
-            handleJoinLobby={handleJoinLobby}
-            handleCancel={handleCancel}
-          />
-        )}
-      </div>
+      {/* Render screen-specific content */}
+      {screen === "home" && (
+        <HomeScreen
+          isMobileLandscape={isMobileLandscape}
+          setPartyCode={setPartyCode}
+          setScreen={setScreen}
+          handleCreateLobby={handleCreateLobby}
+          handleJoinLobby={handleJoinLobby}
+        />
+      )}
+      {screen === "join" && (
+        <JoinScreen
+          setUsername={setUsername}
+          handleJoinLobby={handleJoinLobby}
+          handleCancel={handleCancel}
+        />
+      )}
+      {screen === "lobby" && (
+        <LobbyScreen
+          dimensions={mainDimensions}
+          partyCode={partyCode}
+          username={username}
+          players={players}
+          isMobile={isMobile}
+          handleStartRoom={handleStartRoom}
+          handleCancel={handleCancel}
+        />
+      )}
     </main>
   );
 }

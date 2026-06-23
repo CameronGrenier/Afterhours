@@ -22,7 +22,10 @@ export default function HomeScreen({
   handleJoinLobby,
 }) {
   return (
-    <>
+    <div className="w-full max-w-[400px] flex flex-col gap-4 opacity-100 z-[3]">
+      <h1 className="text-4xl font-bold text-white font-display uppercase text-center leading-none">
+        afterhours
+      </h1>
       {/* Host Button Section */}
       <div className="relative w-full">
         <Button variant={"dark"} onClick={() => handleCreateLobby()}>
@@ -62,12 +65,7 @@ export default function HomeScreen({
           />
 
           {/* Join button */}
-          <Button
-            variant="dark"
-            onClick={() => {
-              setScreen("join");
-            }}
-          >
+          <Button variant="dark" onClick={() => handleJoinLobby()}>
             Join
           </Button>
 
@@ -93,6 +91,6 @@ export default function HomeScreen({
           )}
         </div>
       </Surface>
-    </>
+    </div>
   );
 }
