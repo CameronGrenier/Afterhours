@@ -49,7 +49,7 @@ Milestone 01
     - `source .venv/bin/activate` on Mac and Linux
     - `.venv/Scripts/activate` on Windows
 4. install requirements `pip install -r requirements.txt`
-4. run backend (TBD)
+4. run local backend `uvicorn room_manager:socket_app --port 8000 --reload`
 
 ### Frontend
 1. cd into the `/frontend` directory
