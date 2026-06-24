@@ -18,7 +18,7 @@ export default function HomeScreen({
   isMobileLandscape,
   setPartyCode,
   setScreen,
-  handleCreateLobby,
+  setMode,
   handleJoinLobby,
 }) {
   return (
@@ -28,7 +28,13 @@ export default function HomeScreen({
       </h1>
       {/* Host Button Section */}
       <div className="relative w-full">
-        <Button variant={"dark"} onClick={() => handleCreateLobby()}>
+        <Button
+          variant={"dark"}
+          onClick={() => {
+            setMode("host");
+            setScreen("join");
+          }}
+        >
           Host
         </Button>
         {/* Responsive annotation for Host button */}
@@ -60,12 +66,18 @@ export default function HomeScreen({
           <Input
             type="text"
             placeholderText="Party Code"
-            onChange={(inputText) => setPartyCode(inputText)}
+            onChange={(inputText) => setPartyCode(inputText.toUpperCase())}
             className="uppercase placeholder:lowercase"
           />
 
           {/* Join button */}
-          <Button variant="dark" onClick={() => handleJoinLobby()}>
+          <Button
+            variant="dark"
+            onClick={() => {
+              setMode("join");
+              setScreen("join");
+            }}
+          >
             Join
           </Button>
 

@@ -11,7 +11,7 @@ import MemberItem from "@/components/MemberItem";
  *
  * The waiting room shown after a user joins a party. It displays:
  *   - A "Members" panel listing everyone currently in the party.
- *   - The party code, plus Start / Cancel actions.
+ *   - The party code, plus Start / Leave actions.
  *   - An ambient visualization of the roster:
  *       • Desktop → names arranged along an inward-winding spiral (PlayersDisplay).
  *       • Mobile  → the spiral is skipped (too cramped to read); instead a small
@@ -96,7 +96,7 @@ export default function LobbyScreen({
           <Button variant="danger" onClick={() => handleCancel()}>
             <div className="flex gap-2 items-center w-fit mx-auto">
               <Undo2 size={20} strokeWidth={3.2} />
-              <span>Cancel</span>
+              <span>Leave</span>
             </div>
           </Button>
         </div>

@@ -8,23 +8,33 @@ import topoPortrait from "@/assets/Images/topology_bg_images/topology-portrait.w
 import topoPortrait2x from "@/assets/Images/topology_bg_images/topology-portrait@2x.webp";
 import topoUltrawide from "@/assets/Images/topology_bg_images/topology-ultrawide.webp";
 
+// Api related methods
+import { socket } from "@/api/client";
+import { createRoom, joinRoom, leaveRoom } from "@/api/room";
+
 // Components and hooks
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import Panel from "@/components/Panel";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { setMusicVolume, setSfxVolume } from "@/lib/audio/audioSettings.js";
-import { startLobbyMusic, stopLobbyMusic } from "@/lib/audio/lobbyMusicPlayer.js";
+import {
+  startLobbyMusic,
+  stopLobbyMusic,
+} from "@/lib/audio/lobbyMusicPlayer.js";
+
+import Panel from "@/components/Panel";
+import Slider from "@/components/Slider.jsx";
 
 import HomeScreen from "./HomeScreen.jsx";
 import JoinScreen from "./JoinScreen.jsx";
 import LobbyScreen from "./LobbyScreen.jsx";
-import Slider from "@/components/Slider.jsx";
 
 /**
  * Main App Component
  *
- * The root component for the Afterhours application. Manages navigation between
- * different screens (home, join, lobby, room) and handles user authentication.
- * Renders responsive background imagery, a settings panel, and screen-specific content.
+ * Root component for the Afterhours application. Owns the top-level app state
+ * (socket connection/SID, current screen, party code, username, player list)
+ * and switches between the home, join, and lobby screens. Also renders the
+ * responsive background imagery and the settings panel.
  */
 export default function App() {
   // =========================================================================
@@ -37,6 +47,8 @@ export default function App() {
   // =========================================================================
   // State Management
   // =========================================================================
+  const [sid, setSid] = useState(null); // Socket ID
+  const [mode, setMode] = useState(null); // mode for the join screen determines which handler it uses: "host" | "join"
   const [screen, setScreen] = useState("home"); // Current screen: 'home', 'join', 'lobby'
   const [partyCode, setPartyCode] = useState(""); // Party code entered by user
   const [username, setUsername] = useState(""); // Formatted username
@@ -51,6 +63,20 @@ export default function App() {
   // Refs
   // =========================================================================
   const mainRef = useRef(null);
+
+  // =========================================================================
+  // Listeners
+  // =========================================================================
+
+  // Keep the local player list in sync with the server. The backend emits
+  // these to everyone in the room, including the player who just joined/left.
+  useSocketEvent("player_joined", (data) => {
+    setPlayers(data.all_players);
+  });
+
+  useSocketEvent("player_left", (data) => {
+    setPlayers(data.all_players);
+  });
 
   // =========================================================================
   // Event Handlers
@@ -72,51 +98,54 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
 
+  // Set SID on initial mount and when socket connects
+  useEffect(() => {
+    if (socket.connected) setSid(socket.id);
+  }, []);
+  useSocketEvent("connect", () => {
+    setSid(socket.id);
+  });
+
   /**
    * Handles user joining an existing party/lobby.
    *
-   * Converts the username to PascalCase format before joining.
-   * Should only be called after username and party code are provided.
-   * Currently triggers an alert; should be replaced with backend API call.
+   * PascalCases the username, sends the join request, stores the room code the
+   * server returns, and moves to the lobby screen. Should only be called after
+   * a username and party code have been provided.
    */
-  function handleJoinLobby() {
+  async function handleJoinLobby() {
     const pascal = toPascalCase(username);
     setUsername(pascal);
 
-    // TODO: replace with backend API call
-    let playersFromServer = [
-      "AdamSandler",
-      "MatureAdult",
-      "SlimJim",
-      "UrMom",
-      pascal,
-      "Batman",
-      "Shaq",
-      "DwayneJohnson",
-      "GordonRamsay",
-    ]; // the list of players should come from the backend, including the current user
+    console.log(`sid: ${sid}, partyCode: ${partyCode}, username: ${pascal}`);
+    const response = await joinRoom(sid, partyCode, pascal);
+    setPartyCode(response["Room Code"]);
+    // get server time here
 
-    if (!playersFromServer || playersFromServer.length === 0) {
-      alert("Party could not be found. Recreate the party and try again.");
-    }
-    setPlayers(playersFromServer);
     setScreen("lobby");
   }
 
   /**
    * Handles user creating a new lobby/party.
    *
-   * Transitions the user from the home screen to the join screen.
-   * Currently triggers an alert; should be replaced with backend API call.
+   * PascalCases the username, asks the server to create a room, and on success
+   * seeds the local party code and player list before moving to the lobby
+   * screen. Alerts the user if the server returns no room code.
    */
-  function handleCreateLobby() {
-    // TODO: replace with backend API call
-    let code = "abcd"; // this should come from the backend
+  async function handleHostLobby() {
+    const pascal = toPascalCase(username);
+    setUsername(pascal);
+
+    const response = await createRoom(sid, pascal);
+    const code = response["Room Code"];
     if (!code) {
       alert("Party code could not be generated. Try again later.");
+      error("No party code returned from server");
+    } else {
+      setPartyCode(response["Room Code"]);
+      setPlayers([pascal]);
+      setScreen("lobby");
     }
-    setPartyCode(code);
-    setScreen("join");
   }
 
   /**
@@ -131,6 +160,22 @@ export default function App() {
     setUsername("");
   }
 
+  /**
+   * Leaves the current room and returns to the join screen.
+   *
+   * Notifies the server so the player is removed and the other clients receive
+   * an updated player list.
+   */
+  function handleLeaveRoom() {
+    leaveRoom(sid, partyCode, username);
+    setScreen("join");
+  }
+
+  /**
+   * Starts the current room/game.
+   *
+   * TODO: stub. Currently only alerts; needs to call the start_game endpoint.
+   */
   function handleStartRoom() {
     alert("user wants to start the room");
   }
@@ -237,18 +282,18 @@ export default function App() {
           </div>
         }
       >
-       <Slider
-         sliderTitle="SoundsFx Volume"
-         value={sfxVolume}
-         onChange={setSfxVolumeValue}
-       />
-       {!isMobile && (
-         <Slider
-           sliderTitle="Music Volume"
-           value={musicVolume}
-           onChange={setMusicVolumeValue}
-         />
-       )}
+        <Slider
+          sliderTitle="SoundsFx Volume"
+          value={sfxVolume}
+          onChange={setSfxVolumeValue}
+        />
+        {!isMobile && (
+          <Slider
+            sliderTitle="Music Volume"
+            value={musicVolume}
+            onChange={setMusicVolumeValue}
+          />
+        )}
       </Panel>
 
       {/* =====================================================================
@@ -261,14 +306,15 @@ export default function App() {
           isMobileLandscape={isMobileLandscape}
           setPartyCode={setPartyCode}
           setScreen={setScreen}
-          handleCreateLobby={handleCreateLobby}
-          handleJoinLobby={handleJoinLobby}
+          setMode={setMode}
         />
       )}
       {screen === "join" && (
         <JoinScreen
+          mode={mode}
           setUsername={setUsername}
           handleJoinLobby={handleJoinLobby}
+          handleHostLobby={handleHostLobby}
           handleCancel={handleCancel}
         />
       )}
@@ -280,7 +326,7 @@ export default function App() {
           players={players}
           isMobile={isMobile}
           handleStartRoom={handleStartRoom}
-          handleCancel={handleCancel}
+          handleCancel={handleLeaveRoom}
         />
       )}
     </main>

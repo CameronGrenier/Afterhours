@@ -15,8 +15,10 @@ import Input from "../../components/Input";
  * @returns {React.ReactNode} Join screen content
  */
 export default function JoinScreen({
+  mode,
   setUsername,
   handleJoinLobby,
+  handleHostLobby,
   handleCancel,
 }) {
   return (
@@ -34,7 +36,7 @@ export default function JoinScreen({
           />
 
           {/* Confirm join button */}
-          <Button variant="dark" onClick={() => handleJoinLobby()}>
+          <Button variant="dark" onClick={() => (mode === "join") ? handleJoinLobby() : handleHostLobby()}>
             Join
           </Button>
 
