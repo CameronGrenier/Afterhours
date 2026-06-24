@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, Any, List, Tuple
 import asyncio
-from Games.Game2.GameEngine.PlayerClass import PlayerClass
+from backend.Games.Game2.GameEngine.PlayerClass import PlayerClass
 
 
 class GamePhases(Enum):
