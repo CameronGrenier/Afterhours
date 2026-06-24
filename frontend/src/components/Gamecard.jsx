@@ -10,7 +10,7 @@ import { Info } from "lucide-react";
  * @returns {React.ReactNode} Game card
  */
 
-function Gamecard({ name, imgSrc, handleInfo, handlePlay }) {
+function GameCard({ name, imgSrc, handleInfo, handlePlay }) {
   function onInfoClick(event) {
     event.stopPropagation();
     handleInfo?.(name);
