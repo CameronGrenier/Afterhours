@@ -47,8 +47,8 @@ export default function Button({ variant, disabled, ariaLabel, onClick, children
       hover = "hover:bg-white hover:text-black hover:border-black";
       focus = "focus-visible:bg-white focus-visible:text-black focus-visible:border-black";
   }
-
-  const buttonStyle = `${base} ${hover} ${focus}`;
+  const hoverStyles = disabled? '' : `${hover} ${focus}`
+  const buttonStyle = `${base} ` + hoverStyles;
 
   // =========================================================================
   // Render

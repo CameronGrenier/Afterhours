@@ -1,53 +1,50 @@
 import { Info } from "lucide-react";
+import { usePartyContext } from '@/hooks/usePartyContext';
 
 /**
  * Responsive game selection card.
  *
  * @param {string} name - Game title displayed on the card
  * @param {string} imgSrc - Background artwork source
+ * @param {string} color - CSS color for the game title
  * @param {(name: string) => void} handleInfo - Called when the info button is clicked
  * @param {() => void} handlePlay - Called when the card is clicked
  * @returns {React.ReactNode} Game card
  */
+export default function GameCard({
+  name,
+  imgSrc,
+  color = "white",
+  handleInfo,
+  handlePlay,
+}) {
+  const { isMobile } = usePartyContext();
 
-function GameCard({ name, imgSrc, handleInfo, handlePlay }) {
   function onInfoClick(event) {
     event.stopPropagation();
     handleInfo?.(name);
   }
 
   return (
-    <div className="group relative w-full">
+    <div
+      className="relative w-full h-full rounded-lg overflow-hidden bg-clip-padding border-2 border-transparent hover:border-white cursor-pointer p-4 xl:p-6"
+      style={{
+        backgroundImage: `url(${imgSrc})`,
+        backgroundSize: "cover",
+        backgroundPosition: "top",
+        backgroundRepeat: "no-repeat",
+      }}
+      onClick={handlePlay}
+    >
+      <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-none" style={{ color }}>
+        {name}
+      </h2>
       <button
-        type="button"
-        onClick={handlePlay}
-        aria-label={`Play ${name}`}
-        className="relative aspect-[0.7/1] w-full cursor-pointer overflow-hidden rounded-[1.4rem] border-2 border-transparent bg-cover bg-no-repeat text-left outline-none transition-colors duration-200 [background-position:center_58%] sm:aspect-[1.5/1] group-hover:border-white group-focus-within:border-white focus-visible:border-white"
-        style={{
-          backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0.04) 38%, rgba(0, 0, 0, 0.42) 100%), url(${imgSrc})`,
-        }}
+        className={`absolute top-4 right-4 xl:top-6 xl:right-6 cursor-pointer hover:scale-110`}
+        onClick={onInfoClick}
       >
-        <div className="relative z-10 flex h-full items-start p-4 sm:p-5 md:p-6">
-          <h2 className="max-w-[72%] font-sans text-[clamp(2.75rem,6vw,4rem)] leading-none font-bold tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.45)]">
-            {name}
-          </h2>
-        </div>
+        <Info color="white" size={isMobile? 32 : 40} />
       </button>
-
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end p-2 sm:p-3 md:p-4">
-        <div className="pointer-events-auto">
-          <button
-            type="button"
-            onClick={onInfoClick}
-            aria-label={`More info about ${name}`}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-white transition-transform duration-200 hover:scale-105 focus-visible:scale-105 focus-visible:outline-none"
-          >
-            <Info className="mt-3 h-7 w-7 stroke-[2.35]" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
-
-export default Gamecard;

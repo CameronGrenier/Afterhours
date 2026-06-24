@@ -45,8 +45,9 @@ export default function App() {
   // Media Queries
   // =========================================================================
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const isMobileLandscape =
-    useMediaQuery("(orientation: landscape)") && isMobile;
+  const isMobileLandscape = useMediaQuery(
+    "(orientation: landscape) and (max-height: 500px)",
+  );
 
   // =========================================================================
   // Party Context
@@ -241,7 +242,7 @@ export default function App() {
       {/* =====================================================================
           Settings Panel
           ===================================================================== */}
-      <SettingsPanel/>
+      <SettingsPanel />
 
       {/* =====================================================================
           Main Content Area
@@ -249,7 +250,9 @@ export default function App() {
 
       {/* Render screen-specific content. Each screen reads party state from
           usePartyContext() directly; only local values and handlers are passed. */}
-      {screen === "home" && <HomeScreen isMobileLandscape={isMobileLandscape} />}
+      {screen === "home" && (
+        <HomeScreen isMobileLandscape={isMobileLandscape} />
+      )}
       {screen === "join" && (
         <JoinScreen
           handleJoinLobby={handleJoinLobby}
@@ -258,10 +261,7 @@ export default function App() {
         />
       )}
       {screen === "lobby" && (
-        <LobbyScreen
-          dimensions={mainDimensions}
-          isMobile={isMobile}
-        />
+        <LobbyScreen dimensions={mainDimensions} isMobile={isMobile} />
       )}
     </main>
   );
