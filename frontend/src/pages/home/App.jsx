@@ -10,7 +10,7 @@ import topoUltrawide from "@/assets/Images/topology_bg_images/topology-ultrawide
 
 // Api related methods
 import { socket } from "@/api/client";
-import { createRoom, joinRoom, leaveRoom } from "@/api/room";
+import { createRoom, joinRoom, kickPlayer, leaveRoom } from "@/api/room";
 
 // Components and hooks
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -51,7 +51,8 @@ export default function App() {
   // State Management
   // =========================================================================
   const [sid, setSid] = useState(null); // Socket ID
-  const [mode, setMode] = useState(null); // mode for the join screen determines which handler it uses: "host" | "join"
+  const [isHost, setIsHost] = useState(false) // Flag if the user is the host of the room
+  const [mode, setMode] = useState(null); // Mode for the join screen determines which handler it uses: "host" | "join"
   const [screen, setScreen] = useState("home"); // Current screen: 'home', 'join', 'lobby'
   const [partyCode, setPartyCode] = useState(""); // Party code entered by user
   const [username, setUsername] = useState(""); // Formatted username
@@ -79,6 +80,15 @@ export default function App() {
 
   useSocketEvent("player_left", (data) => {
     setPlayers(data.all_players);
+  });
+
+  useSocketEvent("kicked", (data) => {
+    warning(data?.message ?? "You were kicked from the room");
+    setMode(null);
+    setPartyCode("");
+    setUsername("");
+    setPlayers([]);
+    setScreen("home");
   });
 
   // =========================================================================
@@ -157,6 +167,7 @@ export default function App() {
       alert("Party code could not be generated. Try again later.");
       error("No party code returned from server");
     } else {
+      setIsHost(true);
       setPartyCode(response["Room Code"]);
       setPlayers([pascal]);
       setScreen("lobby");
@@ -170,6 +181,7 @@ export default function App() {
    * Used when user cancels joining a party.
    */
   function handleCancel() {
+    setIsHost(false);
     setScreen("home");
     setPartyCode("");
     setUsername("");
@@ -182,6 +194,7 @@ export default function App() {
    * an updated player list.
    */
   function handleLeaveRoom() {
+    setIsHost(false);
     leaveRoom(sid, partyCode, username);
     setScreen("join");
   }
@@ -193,6 +206,13 @@ export default function App() {
    */
   function handleStartRoom() {
     alert("user wants to start the room");
+  }
+
+  async function handleKickPlayer(targetUsername) {
+    const response = await kickPlayer(sid, partyCode, targetUsername);
+    if (response["status"] !== "success") {
+      error(`${response["message"]}`)
+    }
   }
 
   // =========================================================================
@@ -341,8 +361,10 @@ export default function App() {
           username={username}
           players={players}
           isMobile={isMobile}
+          isHost={isHost}
           handleStartRoom={handleStartRoom}
           handleCancel={handleLeaveRoom}
+          handleKickPlayer={handleKickPlayer}
         />
       )}
     </main>

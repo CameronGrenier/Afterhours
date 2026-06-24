@@ -30,7 +30,6 @@ def generate_room_code():
         code += secrets.choice(characters) #Randomly grab from the above characters to make a code
     return code
 
-
 #HTTP Requests:
 """General Errors:
 userError: username given is not in a room
@@ -54,6 +53,11 @@ class GameEvent(BaseModel):
 class RoomGameRequest(BaseModel):
     code: str
     game_id: Optional[str] = None
+
+class KickPlayerData(BaseModel):
+    sid: str
+    code: str
+    targetUsername: str
 
 @app.get("/status")
 def get_status():
@@ -109,6 +113,7 @@ async def join_room(request: RoomData):
     else:
         return {"status": "nameConflict"}
 @app.post("/select_game")
+
 async def select_game(request: RoomGameRequest):
     code = request.code
     game_id = request.game_id
@@ -120,6 +125,7 @@ async def select_game(request: RoomGameRequest):
         return {"status":"success", "message": f"Game for room {code} is {room.game.value}", "game":f"{room.game.value}"}
     return{"status": "codeError", "message": f"Game room {code} does not exist"}
 @app.post("/start_game")
+
 async def start_game(request: RoomGameRequest):
     code = request.code
     room = active_rooms[code]
@@ -130,6 +136,7 @@ async def start_game(request: RoomGameRequest):
         return {"status": "error","message":"not enough players to start the selected game"}
     return {"status": "success"}
 @app.post("/game_event")
+
 async def handle_event(request:GameEvent):
     """This is the HTTP call from the client to the server global payload is not used for anything as no emit is made"""
     username = request.username
@@ -145,6 +152,73 @@ async def handle_event(request:GameEvent):
             return {'status':'error'}
     else:
         return {"status":"codeError", "message":"Room with that code does not exist"}
+
+@app.post("/kick_player")
+async def kick_player(request: KickPlayerData):
+    code = request.code
+    actor_sid = request.sid
+    target_username = request.targetUsername
+
+    if code not in active_rooms:
+        return {"status": "codeError", "message": "Room code does not exist"}
+
+    if actor_sid not in sid_to_username:
+        return {"status": "userError", "message": "Actor SID not recognized"}
+
+    if sid_to_rooms.get(actor_sid) != code:
+        return {"status": "userError", "message": "Requester is not in this room"}
+
+    room = active_rooms[code]
+    actor_username = sid_to_username[actor_sid]
+
+    if actor_username != room.host:
+        return {"status": "forbidden", "message": "Only the host can kick players"}
+
+    if target_username == room.host:
+        return {"status": "forbidden", "message": "You cannot kick the host"}
+
+    if target_username not in room.players:
+        return {"status": "userError", "message": "Target player is not in this room"}
+
+    target_sid = None
+    for candidate_sid, username in sid_to_username.items():
+        if username == target_username and sid_to_rooms.get(candidate_sid) == code:
+            target_sid = candidate_sid
+            break
+
+    if target_sid is None:
+        return {"status": "userError", "message": "Target SID not found"}
+
+    status = room.remove_player(target_username)
+    if status != "Success":
+        return {"status": "error", "message": "Could not remove player from room"}
+
+    await sio.leave_room(target_sid, code)
+
+    del sid_to_rooms[target_sid]
+    del sid_to_username[target_sid]
+
+    await sio.emit(
+        "player_left",
+        {"all_players": room.players, "username": target_username},
+        room=code,
+    )
+
+    await sio.emit(
+        "kicked",
+        {"code": code, "message": f"You were kicked from room {code}"},
+        room=target_sid,
+    )
+
+    if len(room.players) == 0:
+        del active_rooms[code]
+
+    return {
+        "status": "success",
+        "message": f"{target_username} was kicked from room {code}",
+    }
+
+
 
 #Web Socket Events:
 
@@ -173,6 +247,9 @@ async def leave_room(request: RoomData):
             return {"status": "error", "message":"for some reason unable to remove player from the room."}
     else:
         return{"status":"codeError"}
+
+
+
 
 @sio.event
 async def connect(sid, environ):

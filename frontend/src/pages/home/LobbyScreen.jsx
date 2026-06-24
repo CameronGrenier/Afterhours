@@ -21,12 +21,14 @@ import { useToast } from "@/hooks/useToast";
  * @param {object}   props
  * @param {{width:number,height:number}} props.dimensions - Measured size of the
  *        parent container, used to lay out the spiral. Comes from App's ResizeObserver/ref.
- * @param {string}   props.partyCode      - The shareable party code.
- * @param {string}   props.username       - The current user's (PascalCase) name.
- * @param {string[]} props.players        - All player names in the party.
- * @param {boolean}  props.isMobile       - True on small/short viewports.
- * @param {Function} props.handleStartRoom- Begins the game.
- * @param {Function} props.handleCancel   - Leaves the lobby, returns home.
+ * @param {string}   props.partyCode        - The shareable party code.
+ * @param {string}   props.username         - The current user's (PascalCase) name.
+ * @param {string[]} props.players          - All player names in the party.
+ * @param {boolean}  props.isMobile         - True on small/short viewports.
+ * @param {boolean}  props.isHost           - Flag if the user is the host of the lobby
+ * @param {Function} props.handleStartRoom  - Begins the game.
+ * @param {Function} props.handleCancel     - Leaves the lobby, returns home.
+ * @param {Function} props.handleKickPlayer - Kicks specified player
  */
 export default function LobbyScreen({
   dimensions,
@@ -34,8 +36,10 @@ export default function LobbyScreen({
   username,
   players,
   isMobile,
+  isHost,
   handleStartRoom,
   handleCancel,
+  handleKickPlayer,
 }) {
   const { width, height } = dimensions;
   const { info } = useToast();
@@ -72,7 +76,12 @@ export default function LobbyScreen({
       >
         <div className="relative flex flex-col pb-24">
           {players.map((player) => (
-            <MemberItem key={player} username={player} />
+            <MemberItem
+              key={player}
+              username={player}
+              onKick={handleKickPlayer}
+              kickEnabled={isHost}
+            />
           ))}
         </div>
       </Panel>

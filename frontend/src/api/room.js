@@ -27,3 +27,10 @@ export const leaveRoom = (sid, code, username) => {
     body: { sid, code, username },
   });
 };
+
+export const kickPlayer = (sid, code, targetUsername) => {
+    return request("/kick_player", {
+        method: "POST",
+        body: { sid, code, targetUsername },
+    });
+};
