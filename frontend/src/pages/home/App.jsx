@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Bolt, Undo2 } from "lucide-react";
+import { Bolt } from "lucide-react";
 
 // Background topology images with responsive variants
 import topoLandscape from "@/assets/Images/topology_bg_images/topology-landscape.webp";
@@ -20,7 +20,8 @@ import {
   startLobbyMusic,
   stopLobbyMusic,
 } from "@/lib/audio/lobbyMusicPlayer.js";
-import { useToast } from "@/hooks/useToast";
+import { useNavigate } from "react-router-dom";
+import { usePartyContext } from "@/hooks/usePartyContext.js";
 
 import Panel from "@/components/Panel";
 import Slider from "@/components/Slider.jsx";
@@ -32,13 +33,16 @@ import LobbyScreen from "./LobbyScreen.jsx";
 /**
  * Main App Component
  *
- * Root component for the Afterhours application. Owns the top-level app state
- * (socket connection/SID, current screen, party code, username, player list)
- * and switches between the home, join, and lobby screens. Also renders the
- * responsive background imagery and the settings panel.
+ * Top-level screen coordinator for the Afterhours landing flow. Party state
+ * (SID, screen, party code, username, players, volumes) now lives in
+ * PartyProvider and is read via usePartyContext(). This component owns only
+ * local UI concerns — media queries, the main-element size measurement, and
+ * the handlers that drive transitions between the home, join, and lobby
+ * screens. It also renders the responsive background imagery and settings
+ * panel.
  */
 export default function App() {
-  const { error, warning } = useToast();
+  const navigate = useNavigate();
 
   // =========================================================================
   // Media Queries
@@ -48,61 +52,47 @@ export default function App() {
     useMediaQuery("(orientation: landscape)") && isMobile;
 
   // =========================================================================
-  // State Management
+  // Party Context
   // =========================================================================
-  const [sid, setSid] = useState(null); // Socket ID
-  const [isHost, setIsHost] = useState(false) // Flag if the user is the host of the room
-  const [mode, setMode] = useState(null); // Mode for the join screen determines which handler it uses: "host" | "join"
-  const [screen, setScreen] = useState("home"); // Current screen: 'home', 'join', 'lobby'
-  const [partyCode, setPartyCode] = useState(""); // Party code entered by user
-  const [username, setUsername] = useState(""); // Formatted username
-  const [players, setPlayers] = useState([]); // array of player usernames
+  // Only the values this component actually uses are pulled in. The child
+  // screens read what they need directly from usePartyContext() rather than
+  // receiving it as props.
+  const {
+    sid,
+    setSid,
+    setIsHost,
+    screen,
+    setScreen,
+    partyCode,
+    setPartyCode,
+    username,
+    setUsername,
+    setPlayers,
+    sfxVolume,
+    setSfxVolumeValue,
+    musicVolume,
+    setMusicVolumeValue,
+    warning,
+    error,
+  } = usePartyContext();
 
+  // =========================================================================
+  // Local State + Refs
+  // =========================================================================
   const [mainDimensions, setMainDimensions] = useState(null);
-
-  const [sfxVolume, setSfxVolumeValue] = useState(50);
-  const [musicVolume, setMusicVolumeValue] = useState(50);
-
-  // =========================================================================
-  // Refs
-  // =========================================================================
   const mainRef = useRef(null);
 
   // =========================================================================
-  // Listeners
+  // Effects
   // =========================================================================
 
-  // Keep the local player list in sync with the server. The backend emits
-  // these to everyone in the room, including the player who just joined/left.
-  useSocketEvent("player_joined", (data) => {
-    setPlayers(data.all_players);
-  });
-
-  useSocketEvent("player_left", (data) => {
-    setPlayers(data.all_players);
-  });
-
-  useSocketEvent("kicked", (data) => {
-    warning(data?.message ?? "You were kicked from the room");
-    setMode(null);
-    setPartyCode("");
-    setUsername("");
-    setPlayers([]);
-    setScreen("home");
-  });
-
-  // =========================================================================
-  // Event Handlers
-  // =========================================================================
-
+  // Re-measure the main element whenever it resizes (window resize, orientation
+  // flip, mobile URL-bar show/hide). ResizeObserver also fires once right after
+  // observe(), so this covers the initial measurement too.
   useEffect(() => {
     const el = mainRef.current;
     if (!el) return;
 
-    // Re-measure whenever the box resizes (window resize, orientation flip,
-    // mobile URL-bar show/hide). The observer also fires once right after
-    // observe(), so this covers the initial measurement too — no separate
-    // getBoundingClientRect call needed on mount.
     const observer = new ResizeObserver(() => {
       setMainDimensions(el.getBoundingClientRect());
     });
@@ -111,7 +101,7 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
 
-  // Set SID on initial mount and when socket connects
+  // Seed SID on mount if already connected, and refresh it on (re)connect.
   useEffect(() => {
     if (socket.connected) setSid(socket.id);
   }, []);
@@ -119,19 +109,20 @@ export default function App() {
     setSid(socket.id);
   });
 
+  // =========================================================================
+  // Screen Transition Handlers
+  // =========================================================================
+
   /**
-   * Handles user joining an existing party/lobby.
-   *
-   * PascalCases the username, sends the join request, stores the room code the
-   * server returns, and moves to the lobby screen. Should only be called after
-   * a username and party code have been provided.
+   * Joins an existing party. PascalCases the username, sends the join request,
+   * stores the room code the server returns, and moves to the lobby screen.
    */
   async function handleJoinLobby() {
     const pascal = toPascalCase(username);
     setUsername(pascal);
 
     const response = await joinRoom(sid, partyCode, pascal);
-    const status = response["status"]
+    const status = response["status"];
     if (status === "codeError") {
       error(`Error: room does not exist`);
       return;
@@ -146,18 +137,16 @@ export default function App() {
   }
 
   /**
-   * Handles user creating a new lobby/party.
-   *
-   * PascalCases the username, asks the server to create a room, and on success
-   * seeds the local party code and player list before moving to the lobby
-   * screen. Alerts the user if the server returns no room code.
+   * Creates a new party. PascalCases the username, asks the server to create a
+   * room, and on success seeds the local party code and player list before
+   * moving to the lobby screen.
    */
   async function handleHostLobby() {
     const pascal = toPascalCase(username);
     setUsername(pascal);
 
     const response = await createRoom(sid, pascal);
-    const status = response["status"]
+    const status = response["status"];
     if (status !== "success") {
       error(`${status}: ${response["message"]}`);
       return;
@@ -175,10 +164,7 @@ export default function App() {
   }
 
   /**
-   * Resets the app state and returns to the home screen.
-   *
-   * Clears party code, username, and navigates back to the initial screen.
-   * Used when user cancels joining a party.
+   * Cancels joining and resets back to the home screen.
    */
   function handleCancel() {
     setIsHost(false);
@@ -188,10 +174,8 @@ export default function App() {
   }
 
   /**
-   * Leaves the current room and returns to the join screen.
-   *
-   * Notifies the server so the player is removed and the other clients receive
-   * an updated player list.
+   * Leaves the current room and returns to the join screen. Notifies the server
+   * so the player is removed and other clients receive an updated player list.
    */
   function handleLeaveRoom() {
     setIsHost(false);
@@ -200,32 +184,21 @@ export default function App() {
   }
 
   /**
-   * Starts the current room/game.
-   *
-   * TODO: stub. Currently only alerts; needs to call the start_game endpoint.
+   * Starts the room by navigating to /room with the state it needs.
    */
   function handleStartRoom() {
-    alert("user wants to start the room");
-  }
-
-  async function handleKickPlayer(targetUsername) {
-    const response = await kickPlayer(sid, partyCode, targetUsername);
-    if (response["status"] !== "success") {
-      error(`${response["message"]}`)
-    }
+    navigate("/room", { state: { partyCode, username } });
   }
 
   // =========================================================================
-  // Utility Functions
+  // Utilities
   // =========================================================================
 
   /**
-   * Converts a string to PascalCase format.
-   *
-   * Process:
-   *   1. Replaces punctuation and non-alphanumeric characters with spaces
+   * Converts a string to PascalCase.
+   *   1. Replaces punctuation / non-alphanumerics with spaces
    *   2. Capitalizes the first letter of each word
-   *   3. Removes all whitespace
+   *   3. Strips all whitespace
    *
    * Example: "hello-world" → "HelloWorld"
    *
@@ -234,40 +207,10 @@ export default function App() {
    */
   function toPascalCase(str) {
     return str
-      .replace(/[^a-zA-Z0-9 ]/g, " ") // Turn punctuation/delimiters into spaces
-      .replace(/(?:^\w|[A-Z]|\b\w)/g, (match) => match.toUpperCase()) // Capitalize target letters
-      .replace(/\s+/g, ""); // Strip all spaces
+      .replace(/[^a-zA-Z0-9 ]/g, " ")
+      .replace(/(?:^\w|[A-Z]|\b\w)/g, (match) => match.toUpperCase())
+      .replace(/\s+/g, "");
   }
-
-  useEffect(() => {
-    setSfxVolume(sfxVolume / 100);
-  }, [sfxVolume]);
-
-  useEffect(() => {
-    setMusicVolume(musicVolume / 100);
-  }, [musicVolume]);
-
-  useEffect(() => {
-    if (isMobile) {
-      stopLobbyMusic();
-      return;
-    }
-
-    function unlockLobbyMusic() {
-      void startLobbyMusic();
-    }
-
-    window.addEventListener("pointerdown", unlockLobbyMusic, { once: true });
-    window.addEventListener("keydown", unlockLobbyMusic, { once: true });
-
-    void startLobbyMusic();
-
-    return () => {
-      window.removeEventListener("pointerdown", unlockLobbyMusic);
-      window.removeEventListener("keydown", unlockLobbyMusic);
-      stopLobbyMusic();
-    };
-  }, [isMobile]);
 
   return (
     <main
@@ -335,20 +278,11 @@ export default function App() {
           Main Content Area
           ===================================================================== */}
 
-      {/* Render screen-specific content */}
-      {screen === "home" && (
-        <HomeScreen
-          isMobileLandscape={isMobileLandscape}
-          partyCode={partyCode}
-          setPartyCode={setPartyCode}
-          setScreen={setScreen}
-          setMode={setMode}
-        />
-      )}
+      {/* Render screen-specific content. Each screen reads party state from
+          usePartyContext() directly; only local values and handlers are passed. */}
+      {screen === "home" && <HomeScreen isMobileLandscape={isMobileLandscape} />}
       {screen === "join" && (
         <JoinScreen
-          mode={mode}
-          setUsername={setUsername}
           handleJoinLobby={handleJoinLobby}
           handleHostLobby={handleHostLobby}
           handleCancel={handleCancel}
@@ -357,14 +291,9 @@ export default function App() {
       {screen === "lobby" && (
         <LobbyScreen
           dimensions={mainDimensions}
-          partyCode={partyCode}
-          username={username}
-          players={players}
           isMobile={isMobile}
-          isHost={isHost}
           handleStartRoom={handleStartRoom}
           handleCancel={handleLeaveRoom}
-          handleKickPlayer={handleKickPlayer}
         />
       )}
     </main>

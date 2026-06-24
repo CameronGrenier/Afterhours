@@ -1,5 +1,7 @@
 import { getRoomStatus } from "@/api/room";
 
+import { usePartyContext } from "@/hooks/usePartyContext.js";
+
 import Surface from "@/components/Surface";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
@@ -18,16 +20,9 @@ import Annotation from "./Annotation";
  *
  * @returns {React.ReactNode} Home screen content
  */
-export default function HomeScreen({
-  isMobileLandscape,
-  partyCode,
-  setPartyCode,
-  setScreen,
-  setMode,
-  handleJoinLobby,
-}) {
-
-  const { error } = useToast();
+export default function HomeScreen({ isMobileLandscape }) {
+  const { error, partyCode, setPartyCode, setScreen, setMode } =
+    usePartyContext();
 
   async function checkRoomStatus() {
     const response = await getRoomStatus(partyCode);

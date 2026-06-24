@@ -1,5 +1,7 @@
 import { Undo2 } from "lucide-react";
 
+import { usePartyContext } from "@/hooks/usePartyContext.js";
+
 import Surface from "../../components/Surface";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
@@ -15,12 +17,12 @@ import Input from "../../components/Input";
  * @returns {React.ReactNode} Join screen content
  */
 export default function JoinScreen({
-  mode,
-  setUsername,
   handleJoinLobby,
   handleHostLobby,
   handleCancel,
 }) {
+  const { mode, setUsername } = usePartyContext();
+
   return (
     <div className="w-full max-w-[500px] flex flex-col gap-4 opacity-100 z-[3]">
       <h1 className="text-4xl font-bold text-white font-display uppercase text-center leading-none">
@@ -36,7 +38,12 @@ export default function JoinScreen({
           />
 
           {/* Confirm join button */}
-          <Button variant="dark" onClick={() => (mode === "join") ? handleJoinLobby() : handleHostLobby()}>
+          <Button
+            variant="dark"
+            onClick={() =>
+              mode === "join" ? handleJoinLobby() : handleHostLobby()
+            }
+          >
             Join
           </Button>
 

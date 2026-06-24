@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Undo2, Users } from "lucide-react";
 
+import { usePartyContext } from "@/hooks/usePartyContext.js";
+
 import PartyCode from "@/components/PartyCode";
 import Button from "@/components/Button";
 import Panel from "@/components/Panel";
@@ -32,17 +34,13 @@ import { useToast } from "@/hooks/useToast";
  */
 export default function LobbyScreen({
   dimensions,
-  partyCode,
-  username,
-  players,
   isMobile,
-  isHost,
   handleStartRoom,
   handleCancel,
-  handleKickPlayer,
 }) {
+
+  const { info, partyCode, username, players, isHost, handleKickPlayer} = usePartyContext();
   const { width, height } = dimensions;
-  const { info } = useToast();
 
   // The spiral is a desktop-only flourish. On mobile we skip the (relatively
   // expensive) layout math entirely — `positions` stays null and we announce
