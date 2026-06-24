@@ -183,13 +183,6 @@ export default function App() {
     setScreen("join");
   }
 
-  /**
-   * Starts the room by navigating to /room with the state it needs.
-   */
-  function handleStartRoom() {
-    navigate("/room", { state: { partyCode, username } });
-  }
-
   // =========================================================================
   // Utilities
   // =========================================================================

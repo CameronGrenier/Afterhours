@@ -29,15 +29,21 @@ import { useToast } from "@/hooks/useToast";
  * @param {boolean}  props.isMobile         - True on small/short viewports.
  * @param {boolean}  props.isHost           - Flag if the user is the host of the lobby
  * @param {Function} props.handleStartRoom  - Begins the game.
- * @param {Function} props.handleCancel     - Leaves the lobby, returns home.
+ * @param {Function} props.handleLeave     - Leaves the lobby, returns home.
  * @param {Function} props.handleKickPlayer - Kicks specified player
  */
 export default function LobbyScreen({
   dimensions,
   isMobile,
-  handleStartRoom,
-  handleCancel,
+  handleLeave,
 }) {
+
+  /**
+  * Starts the room by navigating to /room with the state it needs.
+  */
+  function handleStartRoom() {
+    navigate("/room", { state: { partyCode, username } });
+  }
 
   const { info, partyCode, username, players, isHost, handleKickPlayer} = usePartyContext();
   const { width, height } = dimensions;
@@ -103,7 +109,7 @@ export default function LobbyScreen({
             {isHost? <p>Start</p> : <p>Waiting for Host</p>}
           </Button>
           {/* Return to home screen. */}
-          <Button variant="danger" onClick={() => handleCancel()}>
+          <Button variant="danger" onClick={() => handleLeave()}>
             <div className="flex gap-2 items-center w-fit mx-auto">
               <Undo2 size={20} strokeWidth={3.2} />
               <span>Leave</span>
