@@ -3,17 +3,6 @@ import { CircleX } from "lucide-react";
 import kickPlayerIcon from "../assets/icons/KickPlayer.svg";
 
 /**
- * Handles player kick action.
- *
- * TODO: Replace this stub with the real backend API call when the kick endpoint is implemented.
- *
- * @param {string} username - The username of the player to kick
- */
-function onKick(username) {
-  alert(`Kicked Player: ${username}`);
-}
-
-/**
  * MemberItem Component
  *
  * Displays a lobby member with an interactive kick action. The component features
@@ -31,9 +20,10 @@ function onKick(username) {
  *   - Works with keyboard-only input
  *
  * @param {string} username - The display name of the party member
+ * @param onKick - The action taken when kicking a player
  * @returns {React.ReactNode} Member item element with kick action
  */
-function MemberItem({ username }) {
+function MemberItem({ username , onKick }) {
   // =========================================================================
   // State Management
   // =========================================================================
@@ -107,7 +97,10 @@ function MemberItem({ username }) {
         <button
           type="button"
           className="flex-1 flex justify-center items-center cursor-pointer"
-          onClick={() => onKick(username)}
+          onClick={() => {
+              onKick(username);
+              setIsKickState(false);
+          }}
           tabIndex={isKickState ? 0 : -1}
           ref={kickButtonRef}
         >

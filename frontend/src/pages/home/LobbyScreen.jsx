@@ -36,6 +36,7 @@ export default function LobbyScreen({
   isMobile,
   handleStartRoom,
   handleCancel,
+  handleKickPlayer,
 }) {
   const { width, height } = dimensions;
   const { info } = useToast();
@@ -72,7 +73,7 @@ export default function LobbyScreen({
       >
         <div className="relative flex flex-col pb-24">
           {players.map((player) => (
-            <MemberItem key={player} username={player} />
+            <MemberItem key={player} username={player} onKick={handleKickPlayer}/>
           ))}
         </div>
       </Panel>

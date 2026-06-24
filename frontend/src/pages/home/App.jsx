@@ -10,7 +10,7 @@ import topoUltrawide from "@/assets/Images/topology_bg_images/topology-ultrawide
 
 // Api related methods
 import { socket } from "@/api/client";
-import { createRoom, joinRoom, leaveRoom } from "@/api/room";
+import { createRoom, joinRoom, kickPlayer, leaveRoom } from "@/api/room";
 
 // Components and hooks
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -79,6 +79,15 @@ export default function App() {
 
   useSocketEvent("player_left", (data) => {
     setPlayers(data.all_players);
+  });
+
+  useSocketEvent("kicked", (data) => {
+    warning(data?.message ?? "You were kicked from the room");
+    setMode(null);
+    setPartyCode("");
+    setUsername("");
+    setPlayers([]);
+    setScreen("home");
   });
 
   // =========================================================================
@@ -193,6 +202,10 @@ export default function App() {
    */
   function handleStartRoom() {
     alert("user wants to start the room");
+  }
+
+  function handleKickPlayer(targetUsername) {
+    kickPlayer(sid, partyCode, targetUsername);
   }
 
   // =========================================================================
@@ -343,6 +356,7 @@ export default function App() {
           isMobile={isMobile}
           handleStartRoom={handleStartRoom}
           handleCancel={handleLeaveRoom}
+          handleKickPlayer={handleKickPlayer}
         />
       )}
     </main>

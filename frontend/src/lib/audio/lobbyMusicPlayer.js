@@ -17,6 +17,7 @@ let fadeIntervalId = null;
 let unsubscribeFromMusicVolume = null;
 let isStarted = false;
 let isTransitioning = false;
+let playbackSessionId = 0;
 
 function getRandomTrackIndex() {
   if (!playlist.length) return 0;
@@ -44,6 +45,14 @@ function syncTrackVolume(trackState) {
   trackState.audio.volume = clampVolume(
     trackState.track.volume * trackState.fadeLevel * getMusicVolume(),
   );
+}
+
+function resetTrackState(trackState) {
+  if (!trackState) return;
+
+  trackState.audio.pause();
+  trackState.audio.currentTime = 0;
+  trackState.hasScheduledFade = false;
 }
 
 function createTrackState(track) {
@@ -113,13 +122,21 @@ function fadeTrackTo(trackState, targetFadeLevel, durationMs, onComplete) {
   }, FADE_STEP_MS);
 }
 
-async function playTrack(trackState, { fadeIn = false } = {}) {
+async function playTrack(trackState, { fadeIn = false, sessionId } = {}) {
   trackState.fadeLevel = fadeIn ? 0 : 1;
   syncTrackVolume(trackState);
 
   try {
     await trackState.audio.play();
   } catch {
+    return false;
+  }
+
+  if (
+    sessionId !== playbackSessionId ||
+    currentTrackState !== trackState
+  ) {
+    resetTrackState(trackState);
     return false;
   }
 
@@ -150,11 +167,11 @@ async function advanceToNextTrack() {
   if (!playlist.length || isTransitioning) return;
 
   isTransitioning = true;
+  const sessionId = playbackSessionId;
 
   const previousTrackState = currentTrackState;
   if (previousTrackState) {
-    previousTrackState.audio.pause();
-    previousTrackState.audio.currentTime = 0;
+    resetTrackState(previousTrackState);
   }
 
   currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
@@ -164,7 +181,10 @@ async function advanceToNextTrack() {
   currentTrackState = nextTrackState;
   clearTransitionTimeout();
 
-  const didPlay = await playTrack(nextTrackState, { fadeIn: true });
+  const didPlay = await playTrack(nextTrackState, {
+    fadeIn: true,
+    sessionId,
+  });
 
   if (didPlay) {
     scheduleFadeOut(nextTrackState);
@@ -175,6 +195,7 @@ async function advanceToNextTrack() {
 
 export async function startLobbyMusic() {
   if (!playlist.length) return false;
+  const sessionId = playbackSessionId;
 
   if (unsubscribeFromMusicVolume == null) {
     unsubscribeFromMusicVolume = subscribeToMusicVolume(() => {
@@ -187,7 +208,7 @@ export async function startLobbyMusic() {
       return true;
     }
 
-    const didPlay = await playTrack(currentTrackState);
+    const didPlay = await playTrack(currentTrackState, { sessionId });
 
     if (didPlay) {
       scheduleFadeOut(currentTrackState);
@@ -206,7 +227,7 @@ export async function startLobbyMusic() {
   currentTrackState = trackState;
   isStarted = true;
 
-  const didPlay = await playTrack(trackState);
+  const didPlay = await playTrack(trackState, { sessionId });
 
   if (didPlay) {
     scheduleFadeOut(trackState);
@@ -220,12 +241,12 @@ export async function startLobbyMusic() {
 }
 
 export function stopLobbyMusic() {
+  playbackSessionId += 1;
   clearTransitionTimeout();
   clearFadeInterval();
 
   if (currentTrackState) {
-    currentTrackState.audio.pause();
-    currentTrackState.audio.currentTime = 0;
+    resetTrackState(currentTrackState);
     currentTrackState = null;
   }
 
