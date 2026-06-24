@@ -129,7 +129,7 @@ export default function Panel({ className, header, children, icon, position, ari
 
       <aside
         ref={asideRef}
-        className={`${isOpen ? (isMobile ? panelOpenMobileStyles : panelOpenDesktopStyles) : panelClosedStyles} ${className} flex flex-col z-[9999] h-screen`}
+        className={`${isOpen ? (isMobile ? panelOpenMobileStyles : panelOpenDesktopStyles) : panelClosedStyles} ${className} flex flex-col ${isOpen ? "z-[9999]" : "z-[10]"} h-screen`}
       >
         {isOpen ? (
           <>

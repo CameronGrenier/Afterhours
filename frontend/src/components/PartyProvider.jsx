@@ -106,6 +106,7 @@ export function PartyProvider({ children }) {
     setSid,
     isHost,
     setIsHost,
+    isMobile,
     mode,
     setMode,
     screen,

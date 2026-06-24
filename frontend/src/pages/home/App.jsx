@@ -23,8 +23,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { usePartyContext } from "@/hooks/usePartyContext.js";
 
-import Panel from "@/components/Panel";
-import Slider from "@/components/Slider.jsx";
+import SettingsPanel from "@/components/SettingsPanel.jsx";
 
 import HomeScreen from "./HomeScreen.jsx";
 import JoinScreen from "./JoinScreen.jsx";
@@ -242,28 +241,7 @@ export default function App() {
       {/* =====================================================================
           Settings Panel
           ===================================================================== */}
-      <Panel
-        position="tl"
-        icon={<Bolt size={40} color="#ffffff" fill="#000000" />}
-        header={
-          <div className="w-full text-white font-bold text-4xl tracking-tight px-5 py-4">
-            Settings
-          </div>
-        }
-      >
-        <Slider
-          sliderTitle="SoundsFx Volume"
-          value={sfxVolume}
-          onChange={setSfxVolumeValue}
-        />
-        {!isMobile && (
-          <Slider
-            sliderTitle="Music Volume"
-            value={musicVolume}
-            onChange={setMusicVolumeValue}
-          />
-        )}
-      </Panel>
+      <SettingsPanel/>
 
       {/* =====================================================================
           Main Content Area
