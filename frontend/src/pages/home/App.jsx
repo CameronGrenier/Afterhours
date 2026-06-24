@@ -20,6 +20,7 @@ import {
   startLobbyMusic,
   stopLobbyMusic,
 } from "@/lib/audio/lobbyMusicPlayer.js";
+import { useToast } from "@/hooks/useToast";
 
 import Panel from "@/components/Panel";
 import Slider from "@/components/Slider.jsx";
@@ -37,6 +38,8 @@ import LobbyScreen from "./LobbyScreen.jsx";
  * responsive background imagery and the settings panel.
  */
 export default function App() {
+  const { error } = useToast();
+
   // =========================================================================
   // Media Queries
   // =========================================================================
@@ -117,8 +120,15 @@ export default function App() {
     const pascal = toPascalCase(username);
     setUsername(pascal);
 
-    console.log(`sid: ${sid}, partyCode: ${partyCode}, username: ${pascal}`);
     const response = await joinRoom(sid, partyCode, pascal);
+    const status = response["status"]
+    if (status === "codeError") {
+      error(`Error: room does not exist`);
+      return;
+    } else if (status === "nameConflict") {
+      error(`You snooze you loose. Somebody already took ${pascal}`);
+      return;
+    }
     setPartyCode(response["Room Code"]);
     // get server time here
 
@@ -137,6 +147,11 @@ export default function App() {
     setUsername(pascal);
 
     const response = await createRoom(sid, pascal);
+    const status = response["status"]
+    if (status !== "success") {
+      error(`${status}: ${response["message"]}`);
+      return;
+    }
     const code = response["Room Code"];
     if (!code) {
       alert("Party code could not be generated. Try again later.");
@@ -304,6 +319,7 @@ export default function App() {
       {screen === "home" && (
         <HomeScreen
           isMobileLandscape={isMobileLandscape}
+          partyCode={partyCode}
           setPartyCode={setPartyCode}
           setScreen={setScreen}
           setMode={setMode}

@@ -3,7 +3,7 @@ import { request } from "./client";
 export const getRoomStatus = (code, username = "") => {
   return request("/room_status", {
     method: "POST",
-    body: JSON.stringify({ code, username }),
+    body: { code, username },
   });
 };
 
