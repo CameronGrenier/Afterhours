@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Undo2, Users } from "lucide-react";
 
 import PartyCode from "@/components/PartyCode";
 import Button from "@/components/Button";
 import Panel from "@/components/Panel";
 import MemberItem from "@/components/MemberItem";
+import { useToast } from "@/hooks/useToast";
 
 /**
  * LobbyScreen
@@ -14,8 +15,8 @@ import MemberItem from "@/components/MemberItem";
  *   - The party code, plus Start / Leave actions.
  *   - An ambient visualization of the roster:
  *       • Desktop → names arranged along an inward-winding spiral (PlayersDisplay).
- *       • Mobile  → the spiral is skipped (too cramped to read); instead a small
- *                   toast announces the join (JoinToast).
+ *       • Mobile  → the spiral is skipped (too cramped to read); instead an
+ *                   app-wide info toast announces the join (see useToast).
  *
  * @param {object}   props
  * @param {{width:number,height:number}} props.dimensions - Measured size of the
@@ -37,10 +38,11 @@ export default function LobbyScreen({
   handleCancel,
 }) {
   const { width, height } = dimensions;
+  const { info } = useToast();
 
   // The spiral is a desktop-only flourish. On mobile we skip the (relatively
-  // expensive) layout math entirely — `positions` stays null and we render the
-  // toast branch instead.
+  // expensive) layout math entirely — `positions` stays null and we announce
+  // the join with a toast instead.
   const positions = isMobile
     ? null
     : spiralPositions(players, width, height, {
@@ -49,6 +51,11 @@ export default function LobbyScreen({
         slots: 10,
         fit: 0.9,
       });
+
+  // Mobile stand-in for the spiral: announce the join via a top-center toast.
+  useEffect(() => {
+    if (isMobile) info(`${username} has joined!`);
+  }, [isMobile, username, info]);
 
   return (
     <>
@@ -70,12 +77,8 @@ export default function LobbyScreen({
         </div>
       </Panel>
 
-      {/* Ambient roster visualization (or its mobile stand-in). */}
-      {isMobile ? (
-        <JoinToast username={username} />
-      ) : (
-        <PlayersDisplay positions={positions} />
-      )}
+      {/* Ambient roster visualization (desktop only; mobile uses a toast). */}
+      {!isMobile && <PlayersDisplay positions={positions} />}
 
       {/* Radial scrim: darkens the center so foreground UI stays legible
           over the spiral / background. Sits above the spiral (z-2) but below
@@ -102,48 +105,6 @@ export default function LobbyScreen({
         </div>
       </div>
     </>
-  );
-}
-
-/**
- * JoinToast (mobile)
- *
- * A small frosted pill that slides down from the top, announces a join, then
- * auto-dismisses. Used on mobile in place of the spiral, where there isn't
- * room to render rotated names legibly.
- *
- * Lifecycle: mounts hidden → animates in on the next frame → auto-hides after
- * a few seconds. `role="status"` + `aria-live="polite"` so screen readers
- * announce it without stealing focus.
- *
- * @param {object} props
- * @param {string} props.username - Name to announce (currently the current user).
- */
-function JoinToast({ username }) {
-  // Drives the enter/exit transition. We start hidden so the browser paints
-  // the off-screen state first; flipping to visible on the next frame is what
-  // makes the slide-in actually animate (a synchronous true would skip it).
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const enter = requestAnimationFrame(() => setVisible(true));
-    const dismiss = setTimeout(() => setVisible(false), 3500);
-    return () => {
-      cancelAnimationFrame(enter);
-      clearTimeout(dismiss);
-    };
-  }, []);
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={`absolute top-0 left-1/2 z-[5] mt-6 -translate-x-1/2 rounded-full border border-white/15 bg-white/10 px-5 py-2.5 text-white font-display text-lg whitespace-nowrap backdrop-blur-sm transition-all duration-300 ease-out motion-reduce:transition-none ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
-      }`}
-    >
-      {username} has joined!
-    </div>
   );
 }
 
