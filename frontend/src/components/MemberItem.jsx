@@ -23,7 +23,7 @@ import kickPlayerIcon from "../assets/icons/KickPlayer.svg";
  * @param onKick - The action taken when kicking a player
  * @returns {React.ReactNode} Member item element with kick action
  */
-function MemberItem({ username , onKick }) {
+function MemberItem({ username , onKick, kickEnabled }) {
   // =========================================================================
   // State Management
   // =========================================================================
@@ -90,7 +90,7 @@ function MemberItem({ username , onKick }) {
       {/* Kick Action Overlay (slides in from the right) */}
       <div
         className={`absolute inset-0 flex items-center px-5 bg-[#ff2a2a] text-white transition-transform duration-[750ms] ease-[cubic-bezier(0.25,0.6,0.25,1)] ${
-          isKickState ? "translate-x-0" : "translate-x-full"
+          (kickEnabled && isKickState) ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Kick Confirmation Button */}

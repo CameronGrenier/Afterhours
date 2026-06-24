@@ -51,7 +51,8 @@ export default function App() {
   // State Management
   // =========================================================================
   const [sid, setSid] = useState(null); // Socket ID
-  const [mode, setMode] = useState(null); // mode for the join screen determines which handler it uses: "host" | "join"
+  const [isHost, setIsHost] = useState(false) // Flag if the user is the host of the room
+  const [mode, setMode] = useState(null); // Mode for the join screen determines which handler it uses: "host" | "join"
   const [screen, setScreen] = useState("home"); // Current screen: 'home', 'join', 'lobby'
   const [partyCode, setPartyCode] = useState(""); // Party code entered by user
   const [username, setUsername] = useState(""); // Formatted username
@@ -166,6 +167,7 @@ export default function App() {
       alert("Party code could not be generated. Try again later.");
       error("No party code returned from server");
     } else {
+      setIsHost(true);
       setPartyCode(response["Room Code"]);
       setPlayers([pascal]);
       setScreen("lobby");
@@ -179,6 +181,7 @@ export default function App() {
    * Used when user cancels joining a party.
    */
   function handleCancel() {
+    setIsHost(false);
     setScreen("home");
     setPartyCode("");
     setUsername("");
@@ -191,6 +194,7 @@ export default function App() {
    * an updated player list.
    */
   function handleLeaveRoom() {
+    setIsHost(false);
     leaveRoom(sid, partyCode, username);
     setScreen("join");
   }
@@ -354,6 +358,7 @@ export default function App() {
           username={username}
           players={players}
           isMobile={isMobile}
+          isHost={isHost}
           handleStartRoom={handleStartRoom}
           handleCancel={handleLeaveRoom}
           handleKickPlayer={handleKickPlayer}
