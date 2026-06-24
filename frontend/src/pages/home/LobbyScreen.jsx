@@ -99,8 +99,8 @@ export default function LobbyScreen({
         </h1>
         <div className="flex flex-col gap-3">
           <PartyCode partyCode={partyCode} isCompact={false} />
-          <Button variant={"dark"} onClick={() => handleStartRoom()}>
-            Start
+          <Button variant={"dark"} disabled={!isHost} onClick={() => handleStartRoom()}>
+            {isHost? <p>Start</p> : <p>Waiting for Host</p>}
           </Button>
           {/* Return to home screen. */}
           <Button variant="danger" onClick={() => handleCancel()}>

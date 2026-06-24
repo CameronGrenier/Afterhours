@@ -21,7 +21,7 @@ export default function JoinScreen({
   handleHostLobby,
   handleCancel,
 }) {
-  const { mode, setUsername } = usePartyContext();
+  const { mode, setUsername, isHost } = usePartyContext();
 
   return (
     <div className="w-full max-w-[500px] flex flex-col gap-4 opacity-100 z-[3]">
