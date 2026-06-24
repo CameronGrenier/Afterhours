@@ -42,8 +42,6 @@ import LobbyScreen from "./LobbyScreen.jsx";
  * panel.
  */
 export default function App() {
-  const navigate = useNavigate();
-
   // =========================================================================
   // Media Queries
   // =========================================================================
@@ -285,7 +283,6 @@ export default function App() {
         <LobbyScreen
           dimensions={mainDimensions}
           isMobile={isMobile}
-          handleStartRoom={handleStartRoom}
           handleCancel={handleLeaveRoom}
         />
       )}

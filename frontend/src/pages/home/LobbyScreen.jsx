@@ -1,12 +1,12 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Undo2, Users } from "lucide-react";
 
 import { usePartyContext } from "@/hooks/usePartyContext.js";
 
 import PartyCode from "@/components/PartyCode";
 import Button from "@/components/Button";
-import Panel from "@/components/Panel";
-import MemberItem from "@/components/MemberItem";
+import MembersPanel from "../../components/MembersPanel";
 import { useToast } from "@/hooks/useToast";
 
 /**
@@ -38,11 +38,12 @@ export default function LobbyScreen({
   handleLeave,
 }) {
 
+  const navigate = useNavigate();
   /**
   * Starts the room by navigating to /room with the state it needs.
   */
   function handleStartRoom() {
-    navigate("/room", { state: { partyCode, username } });
+    navigate("/room");
   }
 
   const { info, partyCode, username, players, isHost, handleKickPlayer} = usePartyContext();
@@ -68,27 +69,7 @@ export default function LobbyScreen({
   return (
     <>
       {/* Roster list — always available, on every breakpoint. */}
-      <Panel
-        position="tr"
-        icon={<Users size={40} color="#ffffff" fill="#000000" />}
-        header={
-          <div className="w-full flex justify-between text-white font-bold text-4xl tracking-tight px-5 py-4">
-            <p>Members</p>
-            <p>{players.length}</p>
-          </div>
-        }
-      >
-        <div className="relative flex flex-col pb-24">
-          {players.map((player) => (
-            <MemberItem
-              key={player}
-              username={player}
-              onKick={handleKickPlayer}
-              kickEnabled={isHost}
-            />
-          ))}
-        </div>
-      </Panel>
+      <MembersPanel/>
 
       {/* Ambient roster visualization (desktop only; mobile uses a toast). */}
       {!isMobile && <PlayersDisplay positions={positions} />}

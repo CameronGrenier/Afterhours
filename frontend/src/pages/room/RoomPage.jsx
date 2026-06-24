@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom';
+import { usePartyContext } from '@/hooks/usePartyContext';
 
 export default function RoomPage() {
-  const { state } = useLocation();
-  const { partyCode, username } = state || {};
+  const { partyCode, username } = usePartyContext();
   console.log(partyCode, username);
 
   return (
