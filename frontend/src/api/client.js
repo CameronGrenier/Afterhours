@@ -1,12 +1,14 @@
-const BASE_URL = import.meta.env.VITE_API_URL; // Vite exposes env vars on import.meta.env
-import { io } from "socket.io-client"
+const BASE_URL = `http://${window.location.hostname}:8000`;
+import { io } from "socket.io-client";
 
-export const socket = io(BASE_URL, { autoConnect: false });
+export const socket = io(BASE_URL);
 
 export async function request(path, options = {}) {
+  const { body, headers, ...rest } = options;
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
+    headers: { "Content-Type": "application/json", ...headers },
+    ...rest,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
   return res.json();
@@ -15,6 +17,6 @@ export async function request(path, options = {}) {
 export const getServerStatus = () => {
   request("/status", {
     method: "GET",
-    body: JSON.stringify({})
+    body: JSON.stringify({}),
   });
-}
+};

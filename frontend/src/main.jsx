@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import App from "./pages/home/App.jsx";
 import TestPage from "./pages/test/TestPage.jsx";
+import { ToastProvider } from "./components/Toast.jsx";
 
 /**
  * Application Entry Point
@@ -20,14 +21,16 @@ import TestPage from "./pages/test/TestPage.jsx";
  */
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        {/* Main Application */}
-        <Route path="/" element={<App />} />
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Main Application */}
+          <Route path="/" element={<App />} />
 
-        {/* Component Testing Page */}
-        <Route path="/test" element={<TestPage />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Component Testing Page */}
+          <Route path="/test" element={<TestPage />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   </StrictMode>
 );

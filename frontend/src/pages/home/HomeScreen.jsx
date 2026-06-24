@@ -1,6 +1,10 @@
-import Surface from "../../components/Surface";
-import Button from "../../components/Button";
-import Input from "../../components/Input";
+import { getRoomStatus } from "@/api/room";
+
+import Surface from "@/components/Surface";
+import Button from "@/components/Button";
+import Input from "@/components/Input";
+
+import { useToast } from "@/hooks/useToast";
 
 import Annotation from "./Annotation";
 
@@ -16,11 +20,24 @@ import Annotation from "./Annotation";
  */
 export default function HomeScreen({
   isMobileLandscape,
+  partyCode,
   setPartyCode,
   setScreen,
-  handleCreateLobby,
+  setMode,
   handleJoinLobby,
 }) {
+
+  const { error } = useToast();
+
+  async function checkRoomStatus() {
+    const response = await getRoomStatus(partyCode);
+    if (response["status"] === "codeError") {
+      error(`Party Code ${partyCode} does not exist`);
+      return false;
+    }
+    return true;
+  }
+
   return (
     <div className="w-full max-w-[400px] flex flex-col gap-4 opacity-100 z-[3]">
       <h1 className="text-4xl font-bold text-white font-display uppercase text-center leading-none">
@@ -28,7 +45,13 @@ export default function HomeScreen({
       </h1>
       {/* Host Button Section */}
       <div className="relative w-full">
-        <Button variant={"dark"} onClick={() => handleCreateLobby()}>
+        <Button
+          variant={"dark"}
+          onClick={() => {
+            setMode("host");
+            setScreen("join");
+          }}
+        >
           Host
         </Button>
         {/* Responsive annotation for Host button */}
@@ -60,12 +83,20 @@ export default function HomeScreen({
           <Input
             type="text"
             placeholderText="Party Code"
-            onChange={(inputText) => setPartyCode(inputText)}
+            onChange={(inputText) => setPartyCode(inputText.toUpperCase())}
             className="uppercase placeholder:lowercase"
           />
 
           {/* Join button */}
-          <Button variant="dark" onClick={() => handleJoinLobby()}>
+          <Button
+            variant="dark"
+            onClick={async () => {
+              if (await checkRoomStatus()) {
+                setMode("join");
+                setScreen("join");
+              }
+            }}
+          >
             Join
           </Button>
 

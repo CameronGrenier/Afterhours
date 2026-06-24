@@ -60,7 +60,10 @@
   --font-sans: "Space Grotesk", sans-serif;
 
   /* Colours */
-  --color-danger: #FF1F1F
+  --color-danger: #FF1F1F;   /* red */
+  --color-success: #2930FA;  /* flat green */
+  --color-warning: #FA7229;  /* Tequila */
+  --color-info: #FFFFFF;     /* Bedsheet */
 }
 
 /* ---- style reset ---- */
