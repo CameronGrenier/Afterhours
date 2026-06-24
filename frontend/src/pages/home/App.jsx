@@ -38,7 +38,7 @@ import LobbyScreen from "./LobbyScreen.jsx";
  * responsive background imagery and the settings panel.
  */
 export default function App() {
-  const { error } = useToast();
+  const { error, warning } = useToast();
 
   // =========================================================================
   // Media Queries
@@ -126,7 +126,7 @@ export default function App() {
       error(`Error: room does not exist`);
       return;
     } else if (status === "nameConflict") {
-      error(`You snooze you loose. Somebody already took ${pascal}`);
+      warning(`You snooze you loose. Somebody already took ${pascal}`);
       return;
     }
     setPartyCode(response["Room Code"]);
