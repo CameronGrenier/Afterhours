@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import Optional, Any, Dict
 from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
-from backend.GameRoom import GameRoom
+from GameRoom import GameRoom
 
 app = FastAPI()
 sio = socketio.AsyncServer(cors_allowed_origins="*", async_mode="asgi")
