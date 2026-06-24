@@ -283,7 +283,6 @@ export default function App() {
         <LobbyScreen
           dimensions={mainDimensions}
           isMobile={isMobile}
-          handleCancel={handleLeaveRoom}
         />
       )}
     </main>

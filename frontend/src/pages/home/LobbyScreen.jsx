@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Undo2, Users } from "lucide-react";
 
+import { leaveRoom } from "@/api/room.js"
+
 import { usePartyContext } from "@/hooks/usePartyContext.js";
 
 import PartyCode from "@/components/PartyCode";
@@ -35,10 +37,12 @@ import { useToast } from "@/hooks/useToast";
 export default function LobbyScreen({
   dimensions,
   isMobile,
-  handleLeave,
 }) {
 
   const navigate = useNavigate();
+  const { sid, info, partyCode, username, players, isHost, setIsHost, setScreen, handleKickPlayer} = usePartyContext();
+  const { width, height } = dimensions;
+
   /**
   * Starts the room by navigating to /room with the state it needs.
   */
@@ -46,8 +50,16 @@ export default function LobbyScreen({
     navigate("/room");
   }
 
-  const { info, partyCode, username, players, isHost, handleKickPlayer} = usePartyContext();
-  const { width, height } = dimensions;
+  /**
+   * Leaves the current room and returns to the join screen. Notifies the server
+   * so the player is removed and other clients receive an updated player list.
+   */
+  function handleLeave() {
+    setIsHost(false);
+    leaveRoom(sid, partyCode, username);
+    setScreen("join");
+  }
+
 
   // The spiral is a desktop-only flourish. On mobile we skip the (relatively
   // expensive) layout math entirely — `positions` stays null and we announce
