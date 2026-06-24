@@ -175,7 +175,7 @@ async def kick_player(request: KickPlayerData):
         return {"status": "forbidden", "message": "Only the host can kick players"}
 
     if target_username == room.host:
-        return {"status": "error", "message": "You cannot kick the host"}
+        return {"status": "forbidden", "message": "You cannot kick the host"}
 
     if target_username not in room.players:
         return {"status": "userError", "message": "Target player is not in this room"}

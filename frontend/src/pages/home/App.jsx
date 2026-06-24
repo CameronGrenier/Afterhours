@@ -208,8 +208,11 @@ export default function App() {
     alert("user wants to start the room");
   }
 
-  function handleKickPlayer(targetUsername) {
-    kickPlayer(sid, partyCode, targetUsername);
+  async function handleKickPlayer(targetUsername) {
+    const response = await kickPlayer(sid, partyCode, targetUsername);
+    if (response["status"] !== "success") {
+      error(`${response["message"]}`)
+    }
   }
 
   // =========================================================================
