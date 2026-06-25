@@ -3,6 +3,15 @@ import time
 
 from GameRoom import GameRoom
 from service.session_registry import session_registry
+from service.session_service import (
+    clear_room_membership,
+    delete_session,
+    get_session_by_username_and_room_code,
+    get_session_id,
+    set_room_membership,
+    verify_host,
+    verify_session_in_room,
+)
 
 
 class RoomService:
@@ -55,7 +64,7 @@ class RoomService:
 
         return {"status": "userError", "message": "Room exists but the player is not in the room"}
 
-    async def create_room(self, request):
+    async def create_room(self, request, session_id):
         self._sio_ready()
         username = request.username
         sid = request.sid
@@ -73,13 +82,14 @@ class RoomService:
                 session_registry.bind(sid=sid, username=username, room_code=code)
 
                 self.active_rooms[code] = room
+                set_room_membership(session_id, username, code, "host")
                 return {
                     "status": "success",
                     "Room Code": code,
                     "Server Time": time.time(),
                 }
 
-    async def join_room(self, request):
+    async def join_room(self, request, session_id):
         self._sio_ready()
         code = request.code
         username = request.username
@@ -105,13 +115,14 @@ class RoomService:
             room=code,
         )
 
+        set_room_membership(session_id, username, code, "player")
         return {
             "status": "success",
             "Room Code": code,
             "Server Time": time.time(),
         }
 
-    async def leave_room(self, request):
+    async def leave_room(self, request, session_id):
         self._sio_ready()
         code = request.code
         username = request.username
@@ -138,16 +149,24 @@ class RoomService:
                 room=code,
             )
 
+        clear_room_membership(session_id)
+
         return {
             "status": "success",
             "message": f"{username} has been successfully removed from room {code}",
         }
 
-    async def kick_player(self, request):
+    async def kick_player(self, request, session_id):
         self._sio_ready()
         code = request.code
         actor_sid = request.sid
         target_username = request.targetUsername
+
+        session, error = verify_host(session_id, code)
+
+        # ensure user is the host
+        if error is not None:
+            return error
 
         room = self._get_room(code)
         if room is None:
@@ -192,16 +211,24 @@ class RoomService:
         )
 
         self._delete_room_if_empty(code)
+        kicked_session_id = get_session_by_username_and_room_code(request.targetUsername, request.code)
+        clear_room_membership(kicked_session_id)
 
         return {
             "status": "success",
             "message": f"{target_username} was kicked from room {code}",
         }
 
-    async def select_game(self, request):
+    async def select_game(self, request, session_id):
         self._sio_ready()
         code = request.code
         room = self._get_room(code)
+
+        session, error = verify_host(session_id, code)
+
+        # ensure user is the host
+        if error:
+            return error
 
         if room is None:
             return {"status": "codeError", "message": f"Game room {code} does not exist"}
@@ -214,9 +241,15 @@ class RoomService:
             "game": room.game.value,
         }
 
-    async def start_game(self, request):
+    async def start_game(self, request, session_id):
         code = request.code
         room = self._get_room(code)
+
+        session, error = verify_host(session_id, code)
+
+        # ensure user is the host
+        if error:
+            return error
 
         if room is None:
             return {"status": "codeError", "message": "Room not found"}
@@ -227,18 +260,25 @@ class RoomService:
 
         return {"status": "success"}
 
-    async def handle_http_game_event(self, request):
+    async def handle_http_game_event(self, request, session_id):
         code = request.code
-        room = self._get_room(code)
 
+        session, error = verify_session_in_room(session_id, code)
+        if error:
+            return error
+
+        room = self._get_room(code)
         if room is None:
             return {"status": "codeError", "message": "Room with that code does not exist"}
 
+        verified_username = session["username"]
+
         success, message, local_payload, _global_payload = await room.handle_event(
-            request.username,
+            verified_username,
             request.event_type,
             request.data,
         )
+
         if success:
             return {"status": "success", "message": message, "data": local_payload}
 
@@ -248,6 +288,10 @@ class RoomService:
         self._sio_ready()
         room_code = session_registry.get_room(sid)
         username = session_registry.get_username(sid)
+
+        session_id = get_session_by_username_and_room_code(username, room_code)
+        delete_session(session_id)
+
         if room_code is None or username is None:
             return
 
