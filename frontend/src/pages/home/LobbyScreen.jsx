@@ -1,10 +1,14 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Undo2, Users } from "lucide-react";
+
+import { leaveRoom } from "@/api/room.js"
+
+import { usePartyContext } from "@/hooks/usePartyContext.js";
 
 import PartyCode from "@/components/PartyCode";
 import Button from "@/components/Button";
-import Panel from "@/components/Panel";
-import MemberItem from "@/components/MemberItem";
+import MembersPanel from "../../components/MembersPanel";
 import { useToast } from "@/hooks/useToast";
 
 /**
@@ -27,22 +31,35 @@ import { useToast } from "@/hooks/useToast";
  * @param {boolean}  props.isMobile         - True on small/short viewports.
  * @param {boolean}  props.isHost           - Flag if the user is the host of the lobby
  * @param {Function} props.handleStartRoom  - Begins the game.
- * @param {Function} props.handleCancel     - Leaves the lobby, returns home.
+ * @param {Function} props.handleLeave     - Leaves the lobby, returns home.
  * @param {Function} props.handleKickPlayer - Kicks specified player
  */
 export default function LobbyScreen({
   dimensions,
-  partyCode,
-  username,
-  players,
   isMobile,
-  isHost,
-  handleStartRoom,
-  handleCancel,
-  handleKickPlayer,
 }) {
+
+  const navigate = useNavigate();
+  const { sid, info, partyCode, username, players, isHost, setIsHost, setScreen, handleKickPlayer} = usePartyContext();
   const { width, height } = dimensions;
-  const { info } = useToast();
+
+  /**
+  * Starts the room by navigating to /room with the state it needs.
+  */
+  function handleStartRoom() {
+    navigate("/room");
+  }
+
+  /**
+   * Leaves the current room and returns to the join screen. Notifies the server
+   * so the player is removed and other clients receive an updated player list.
+   */
+  function handleLeave() {
+    setIsHost(false);
+    leaveRoom(sid, partyCode, username);
+    setScreen("join");
+  }
+
 
   // The spiral is a desktop-only flourish. On mobile we skip the (relatively
   // expensive) layout math entirely — `positions` stays null and we announce
@@ -64,27 +81,7 @@ export default function LobbyScreen({
   return (
     <>
       {/* Roster list — always available, on every breakpoint. */}
-      <Panel
-        position="tr"
-        icon={<Users size={40} color="#ffffff" fill="#000000" />}
-        header={
-          <div className="w-full flex justify-between text-white font-bold text-4xl tracking-tight px-5 py-4">
-            <p>Members</p>
-            <p>{players.length}</p>
-          </div>
-        }
-      >
-        <div className="relative flex flex-col pb-24">
-          {players.map((player) => (
-            <MemberItem
-              key={player}
-              username={player}
-              onKick={handleKickPlayer}
-              kickEnabled={isHost}
-            />
-          ))}
-        </div>
-      </Panel>
+      <MembersPanel/>
 
       {/* Ambient roster visualization (desktop only; mobile uses a toast). */}
       {!isMobile && <PlayersDisplay positions={positions} />}
@@ -101,11 +98,11 @@ export default function LobbyScreen({
         </h1>
         <div className="flex flex-col gap-3">
           <PartyCode partyCode={partyCode} isCompact={false} />
-          <Button variant={"dark"} onClick={() => handleStartRoom()}>
-            Start
+          <Button variant={"dark"} disabled={!isHost} onClick={() => handleStartRoom()}>
+            {isHost? <p>Start</p> : <p>Waiting for Host</p>}
           </Button>
           {/* Return to home screen. */}
-          <Button variant="danger" onClick={() => handleCancel()}>
+          <Button variant="danger" onClick={() => handleLeave()}>
             <div className="flex gap-2 items-center w-fit mx-auto">
               <Undo2 size={20} strokeWidth={3.2} />
               <span>Leave</span>

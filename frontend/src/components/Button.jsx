@@ -10,13 +10,14 @@
  *   - "light": White background with black text, inverts on hover
  *   - "danger": Red background with white text, inverts on hover
  *
- * @param {string} variant - Button style variant ("dark", "light", or "danger")
- * @param {string} ariaLabel - Accessibility label for screen readers
- * @param {Function} onClick - Click event handler
+ * @param {string} variant           - Button style variant ("dark", "light", or "danger")
+ * @param {boolean} disabled         - Disabled flag to disable click functionality
+ * @param {string} ariaLabel         - Accessibility label for screen readers
+ * @param {Function} onClick         - Click event handler
  * @param {React.ReactNode} children - Button label or nested content
  * @returns {React.ReactNode} Button element
  */
-export default function Button({ variant, ariaLabel, onClick, children }) {
+export default function Button({ variant, disabled, ariaLabel, onClick, children }) {
   // =========================================================================
   // Style Configuration
   // =========================================================================
@@ -46,17 +47,17 @@ export default function Button({ variant, ariaLabel, onClick, children }) {
       hover = "hover:bg-white hover:text-black hover:border-black";
       focus = "focus-visible:bg-white focus-visible:text-black focus-visible:border-black";
   }
-
-  const buttonStyle = `${base} ${hover} ${focus}`;
+  const hoverStyles = disabled? '' : `${hover} ${focus}`
+  const buttonStyle = `${base} ` + hoverStyles;
 
   // =========================================================================
   // Render
   // =========================================================================
   return (
     <button
-      className={`w-full rounded-md px-16 py-4 text-2xl font-bold border-2 cursor-pointer transition-colors duration-200 ${buttonStyle}`}
+      className={`w-full rounded-md px-16 py-4 text-2xl font-bold border-2 ${!disabled && 'cursor-pointer'} transition-colors duration-200 ${buttonStyle}`}
       aria-label={ariaLabel}
-      onClick={onClick}
+      onClick={disabled? null : onClick}
     >
       {children}
     </button>
