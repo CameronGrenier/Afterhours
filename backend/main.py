@@ -14,13 +14,17 @@ from service.session_service import (
 from service.room_service import room_service
 from sockets.handlers import register_socket_handlers
 
-FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+FRONTEND_ORIGINS = [
+    o.strip()
+    for o in os.getenv("FRONTEND_ORIGIN", "http://localhost:5173").split(",")
+    if o.strip()
+]
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false")
 COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax")
 
 
 sio = socketio.AsyncServer(
-    cors_allowed_origins=[FRONTEND_ORIGIN],
+    cors_allowed_origins=FRONTEND_ORIGINS,
     async_mode="asgi",
 )
 
@@ -29,7 +33,7 @@ def create_http_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[FRONTEND_ORIGIN],
+        allow_origins=FRONTEND_ORIGINS,
         allow_credentials = True,
         allow_methods=["*"],
         allow_headers=["*"],
