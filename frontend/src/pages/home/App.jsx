@@ -9,7 +9,7 @@ import topoPortrait2x from "@/assets/Images/topology_bg_images/topology-portrait
 import topoUltrawide from "@/assets/Images/topology_bg_images/topology-ultrawide.webp";
 
 // Api related methods
-import { socket } from "@/api/client";
+import {request, socket} from "@/api/client";
 import { createRoom, joinRoom, kickPlayer, leaveRoom } from "@/api/room";
 
 // Components and hooks
@@ -112,6 +112,11 @@ export default function App() {
   }, []);
 
   // Set SID on initial mount and when socket connects
+  useEffect(() => {
+      request("/session", { method: "Get" }).catch((err) => {
+          console.error("Failed to establish session", err);
+      });
+  }, []);
   useEffect(() => {
     if (socket.connected) setSid(socket.id);
   }, []);
