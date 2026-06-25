@@ -1,10 +1,44 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import { StrictMode, useContext } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-createRoot(document.getElementById('root')).render(
+import "./index.css";
+import App from "./pages/home/App.jsx";
+import TestPage from "./pages/test/TestPage.jsx";
+import RoomPage from "./pages/room/RoomPage.jsx";
+
+import { PartyProvider } from "./components/PartyProvider.jsx";
+import { ToastProvider } from "./components/Toast.jsx";
+
+/**
+ * Application Entry Point
+ *
+ * Initializes the React application with:
+ *   - StrictMode: Highlights potential issues in development
+ *   - BrowserRouter: Enables client-side routing
+ *   - Routes: Application route configuration
+ *
+ * Routes:
+ *   - "/"     - Landing page
+ *   - "/room" - Main room page for selecting games
+ *   - "/test" - Component testing page
+ */
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <App />
+    <ToastProvider>
+      <PartyProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Landing Page */}
+            <Route path="/" element={<App />} />
+            {/* Room Page */}
+            <Route path="/room" element={<RoomPage />} />
+
+            {/* Component Testing Page */}
+            <Route path="/test" element={<TestPage />} />
+          </Routes>
+        </BrowserRouter>
+      </PartyProvider>
+    </ToastProvider>
   </StrictMode>,
-)
+);

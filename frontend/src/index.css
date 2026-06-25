@@ -55,6 +55,30 @@
 
 /* ---- expose to Tailwind ---- */
 @theme {
+  /* Fonts */
   --font-display: "Basenji", sans-serif;
   --font-sans: "Space Grotesk", sans-serif;
+
+  /* Colours */
+  --color-danger: #FF1F1F;   /* red */
+  --color-success: #2930FA;  /* flat green */
+  --color-warning: #FA7229;  /* Tequila */
+  --color-info: #FFFFFF;     /* Bedsheet */
+}
+
+/* ---- style reset ---- */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    color: white;
+  }
+
+  html, body, #root {
+    background-color: black;
+    overscroll-behavior: none;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
 }

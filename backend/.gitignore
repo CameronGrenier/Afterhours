@@ -1,8 +1,10 @@
-.venv
-venv
-__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 env/
+.idea/
+.venv/
+venv/
+node_modules/
+__pycache__
