@@ -16,6 +16,7 @@ import SettingsPanel from "@/components/SettingsPanel";
 import MembersPanel from "@/components/MembersPanel";
 import PartyCode from "@/components/PartyCode";
 import GameCard from "@/components/GameCard";
+import RotateDialog from '@/components/RotateDialog';
 
 import slangGameCardBg from "@/assets/Images/slang_gamecard_bg.webp"
 import slangGameCardBgMobile from "@/assets/Images/slang_gamecard_bg_mobile.webp"
@@ -38,6 +39,7 @@ const GAMES = [
 export default function RoomPage() {
   const { isMobile, partyCode, username, isHost } = usePartyContext();
   const isSmallScreen = useMediaQuery("(max-height: 500px), (max-width: 768px)");
+  const isMobileLandscape = useMediaQuery("(orientation: landscape)") && isSmallScreen;
 
   return (
     <main className='relative w-screen h-dvh grid grid-rows-[auto_minmax(0,1fr)] p-6 overflow-hidden'>
@@ -69,6 +71,8 @@ export default function RoomPage() {
           <div className="fixed inset-0 bg-[linear-gradient(to_bottom,transparent_90%,black)] z-[0]" />
         </>
       )}
+
+      {isMobileLandscape && <RotateDialog />}
 
       <header className='w-full flex justify-center items-center z-[3]'>
         <h1 className='text-3xl lg:text-4xl font-display uppercase text-white'>afterhours</h1>

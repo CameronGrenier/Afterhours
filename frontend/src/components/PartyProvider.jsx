@@ -8,7 +8,10 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 import { kickPlayer } from "@/api/room";
 import { setMusicVolume, setSfxVolume } from "@/lib/audio/audioSettings.js";
-import { startLobbyMusic, stopLobbyMusic } from "@/lib/audio/lobbyMusicPlayer.js";
+import {
+  startLobbyMusic,
+  stopLobbyMusic,
+} from "@/lib/audio/lobbyMusicPlayer.js";
 
 export function PartyProvider({ children }) {
   const { success, warning, error, info, dismiss } = useToast();
@@ -18,6 +21,12 @@ export function PartyProvider({ children }) {
   // =========================================================================
   const [sid, setSid] = useState(null); // Socket ID
   const [isHost, setIsHost] = useState(false); // Flag if the user is the host of the room
+  
+  const [rotateDialogDismissed, setRotateDialogDismissed] = useState(() => { // Flag to track if the user has seen and dismissed a que to rotate out of landscape mobile
+    return localStorage.getItem("rotateDialogDismissed") ?? "true"; // load from local storage to persist this setting across refreshes
+  }); 
+  useEffect(() => {localStorage.setItem("rotateDialogDismissed", rotateDialogDismissed)}, [rotateDialogDismissed]); // update local storage if this changes
+
   const [mode, setMode] = useState(null); // Mode for the join screen determines which handler it uses: "host" | "join"
   const [screen, setScreen] = useState("home"); // Current screen: 'home', 'join', 'lobby'
   const [partyCode, setPartyCode] = useState(""); // Party code entered by user
@@ -50,7 +59,6 @@ export function PartyProvider({ children }) {
     setPlayers([]);
     setScreen("home");
   });
-
 
   // =========================================================================
   // Audio Handling
@@ -106,6 +114,8 @@ export function PartyProvider({ children }) {
     setSid,
     isHost,
     setIsHost,
+    rotateDialogDismissed,
+    setRotateDialogDismissed,
     isMobile,
     mode,
     setMode,
