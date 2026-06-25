@@ -17,6 +17,8 @@ import MembersPanel from "@/components/MembersPanel";
 import PartyCode from "@/components/PartyCode";
 import GameCard from "@/components/GameCard";
 import RotateDialog from '@/components/RotateDialog';
+import Instructions from "@/components/Instructions";
+import CrashOutInstructions from '@/instructions/CrashOutInstructions'
 
 import slangGameCardBg from "@/assets/Images/slang_gamecard_bg.webp"
 import slangGameCardBgMobile from "@/assets/Images/slang_gamecard_bg_mobile.webp"
@@ -40,6 +42,25 @@ export default function RoomPage() {
   const { isMobile, partyCode, username, isHost } = usePartyContext();
   const isSmallScreen = useMediaQuery("(max-height: 500px), (max-width: 768px)");
   const isMobileLandscape = useMediaQuery("(orientation: landscape)") && isSmallScreen;
+  const [instructionSet, setInstructionSet] = useState([]);
+
+  const instructionsRef = useRef();
+
+  const handleInfo = (name) => {
+    switch (name) {
+      case "Slang!":
+        // TODO: add slang instruction set
+        instructionsRef.current?.showModal();
+        break;
+      case "Crash Out":
+        setInstructionSet(CrashOutInstructions({ startingBalance: 1000, maxBet: 500 }));
+        instructionsRef.current?.showModal();
+        break;
+      default:
+        console.error("No instruction set found");
+        setInstructionSet([]);
+    }
+  }
 
   return (
     <main className='relative w-screen h-dvh grid grid-rows-[auto_minmax(0,1fr)] p-6 overflow-hidden'>
@@ -74,6 +95,8 @@ export default function RoomPage() {
 
       {isMobileLandscape && <RotateDialog />}
 
+      <Instructions ref={instructionsRef} instructions={instructionSet}/>
+
       <header className='w-full flex justify-center items-center z-[3]'>
         <h1 className='text-3xl lg:text-4xl font-display uppercase text-white'>afterhours</h1>
       </header>
@@ -82,7 +105,7 @@ export default function RoomPage() {
       <MembersPanel/>
 
       <div className='flex items-center justify-center w-full h-full min-w-0 z-[3]'>
-        <GameCardCarousel/>
+        <GameCardCarousel handleInfo={handleInfo}/>
       </div>
       {!isSmallScreen && <PartyCode isCompact={true} position="br" partyCode={partyCode}/>}
     </main>
@@ -90,7 +113,7 @@ export default function RoomPage() {
 }
 
 
-function GameCardCarousel() {
+function GameCardCarousel({ handleInfo }) {
   const { isMobile } = usePartyContext();
 
   const [index, setIndex] = useState(0);
@@ -172,6 +195,7 @@ function GameCardCarousel() {
               <GameCard
                 name={game.name}
                 imgSrc={isMobile ? game.mobile : game.desktop}
+                handleInfo={handleInfo}
               />
             </div>
           ))}

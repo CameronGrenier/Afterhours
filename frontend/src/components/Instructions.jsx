@@ -108,7 +108,7 @@ export default function Instructions({ ref, instructions }) {
 function DesktopDialog({ ref, content, next, prev }) {
   return (
     <dialog
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full open:grid grid-cols-[auto_1fr_auto] gap-[100px] place-items-center backdrop:backdrop-blur-sm bg-transparent p-4"
+      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full open:grid grid-cols-[auto_1fr_auto] gap-[100px] place-items-center backdrop:backdrop-blur-sm bg-transparent p-4 z-[9999]"
       ref={ref}
     >
       {/* Left arrow steps to the PREVIOUS page. */}
@@ -155,7 +155,7 @@ function DesktopDialog({ ref, content, next, prev }) {
 function MobileDialog({ ref, content, next, prev }) {
   return (
     <dialog
-      className="open:grid grid-rows-[auto_1fr_auto] gap-4 bg-black w-screen h-screen max-w-none max-h-none m-0 p-0 top-0 left-0"
+      className="open:grid grid-rows-[auto_1fr_auto] gap-4 bg-black w-screen h-screen max-w-none max-h-none m-0 p-0 top-0 left-0 z-[999999]"
       ref={ref}
     >
       {/* Header row: title + close (X). */}
