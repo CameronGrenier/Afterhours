@@ -89,7 +89,7 @@ function PartyCode({ partyCode, isCompact = false, position = "bl" }) {
 
   return (
     <div
-      className={`fixed ${partyCodePositionStyles} flex min-h-[60px] min-w-[180px] px-8 py-4 items-center justify-center border-white bg-black`}
+      className={`fixed ${partyCodePositionStyles} flex min-h-[40px] min-w-[150px] px-6 py-3 items-center justify-center border-white bg-black`}
     >
       {/* Label positioned above or below the code */}
       <span
@@ -99,7 +99,7 @@ function PartyCode({ partyCode, isCompact = false, position = "bl" }) {
       </span>
 
       {/* Party code display */}
-      <span className="text-5xl font-bold text-white whitespace-nowrap px-2">
+      <span className="text-4xl font-bold text-white whitespace-nowrap px-2">
         {partyCode}
       </span>
     </div>
