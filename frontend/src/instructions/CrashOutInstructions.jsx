@@ -1,4 +1,14 @@
 import { Fragment } from "react";
+import {
+  Page,
+  PageHeader,
+  Heading,
+  Lead,
+  StepRow,
+  OutlineBlock,
+  FillBlock,
+  LedgerRow,
+} from "./shared";
 
 /**
  * CrashOutInstructions
@@ -47,8 +57,10 @@ import { Fragment } from "react";
  *     dialog, so nothing assumes a width.
  *   - <Page> vertically centres its block and keeps top/bottom padding so the
  *     dialog's floating title and OK button never sit on the copy.
- *   - The "/ 08" in the page header is a hardcoded total. If you add or remove
- *     a page, update TOTAL below.
+ *   - The "/ 08" in the page header comes from TOTAL below, passed to each
+ *     PageHeader. If you add or remove a page, update TOTAL.
+ *   - Generic blocks (Page, Heading, etc.) live in ./shared and are imported
+ *     above; only MultiplierTrack is local to this manual.
  * ------------------------------------------------------------------ *
  */
 
@@ -65,7 +77,7 @@ export default function CrashOutInstructions({
      * 1 — Objective                                                     *
      * ---------------------------------------------------------------- */
     <Page>
-      <PageHeader kicker="How to play" index="01" />
+      <PageHeader kicker="How to play" index="01" total={TOTAL} />
 
       <Heading>
         Ride it up.
@@ -93,7 +105,7 @@ export default function CrashOutInstructions({
      * 2 — Getting started                                              *
      * ---------------------------------------------------------------- */
     <Page>
-      <PageHeader kicker="Getting started" index="02" />
+      <PageHeader kicker="Getting started" index="02" total={TOTAL} />
 
       <Heading>Join the table</Heading>
 
@@ -118,7 +130,7 @@ export default function CrashOutInstructions({
      * 3 — Buy-in phase                                                 *
      * ---------------------------------------------------------------- */
     <Page>
-      <PageHeader kicker="Phase 1 / Buy-in" index="03" />
+      <PageHeader kicker="Phase 1 / Buy-in" index="03" total={TOTAL} />
 
       <Heading>Place your bets</Heading>
 
@@ -149,7 +161,7 @@ export default function CrashOutInstructions({
      * 4 — During the round (signature page)                            *
      * ---------------------------------------------------------------- */
     <Page>
-      <PageHeader kicker="Phase 2 / The round" index="04" />
+      <PageHeader kicker="Phase 2 / The round" index="04" total={TOTAL} />
 
       <Heading>Watch it climb</Heading>
 
@@ -183,7 +195,7 @@ export default function CrashOutInstructions({
      * 5 — Cashing out                                                  *
      * ---------------------------------------------------------------- */
     <Page>
-      <PageHeader kicker="Cashing out" index="05" />
+      <PageHeader kicker="Cashing out" index="05" total={TOTAL} />
 
       <Heading>Take the money</Heading>
 
@@ -221,7 +233,7 @@ export default function CrashOutInstructions({
      * 6 — Crash out (binary carried by inversion)                      *
      * ---------------------------------------------------------------- */
     <Page>
-      <PageHeader kicker="The crash" index="06" />
+      <PageHeader kicker="The crash" index="06" total={TOTAL} />
 
       <Heading>Then it crashes</Heading>
 
@@ -263,7 +275,7 @@ export default function CrashOutInstructions({
      * 7 — Scoring & balance (calm ledger, no inversion)               *
      * ---------------------------------------------------------------- */
     <Page>
-      <PageHeader kicker="Scoring / balance" index="07" />
+      <PageHeader kicker="Scoring / balance" index="07" total={TOTAL} />
 
       <Heading>How the money moves</Heading>
 
@@ -287,7 +299,7 @@ export default function CrashOutInstructions({
      * 8 — Going broke + sign-off                                       *
      * ---------------------------------------------------------------- */
     <Page>
-      <PageHeader kicker="House rule" index="08" />
+      <PageHeader kicker="House rule" index="08" total={TOTAL} />
 
       <Heading>Going broke</Heading>
 
@@ -313,177 +325,6 @@ export default function CrashOutInstructions({
       </div>
     </Page>,
   ];
-}
-
-/* ================================================================== *
- * Shared building blocks                                             *
- * ================================================================== */
-
-/**
- * Page
- *
- * The frame every instruction page sits in. Vertically centres its block and
- * keeps generous top/bottom padding so the dialog's floating title and OK
- * button never overlap the copy. Content is left aligned on purpose to avoid
- * the centred-hero look; the block as a whole is what gets centred.
- * overflow-y-auto is a safety net for very short viewports.
- */
-function Page({ children }) {
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-center overflow-y-auto px-6 py-12 text-white sm:px-10 xl:px-16 xl:py-20">
-      <div className="flex w-full max-w-4xl flex-col gap-6 sm:gap-8">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/**
- * PageHeader
- *
- * Rulebook-style top row: a bordered section tag on the left, a progress
- * counter on the right. The counter earns its place because the modal has no
- * other progress indicator, so it tells the reader how far through they are.
- *
- * @param {string} kicker  Section label.
- * @param {string} index   This page's number, e.g. "03".
- */
-function PageHeader({ kicker, index }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="rounded-lg border-2 border-white px-3 py-1 text-[0.7rem] font-bold uppercase tracking-[0.25em] sm:text-xs">
-        {kicker}
-      </span>
-      <span className="font-display text-sm tabular-nums tracking-widest text-white/50 sm:text-base">
-        {index} / {TOTAL}
-      </span>
-    </div>
-  );
-}
-
-/**
- * Heading
- *
- * The page's display line. Brand face, uppercase, very tight leading.
- */
-function Heading({ children }) {
-  return (
-    <h3 className="font-display text-[clamp(2rem,5.5vw,4rem)] uppercase leading-[0.95] tracking-tight">
-      {children}
-    </h3>
-  );
-}
-
-/**
- * Lead
- *
- * Secondary explanatory paragraph. Constrained width for readability on the
- * very wide desktop panel.
- */
-function Lead({ children }) {
-  return (
-    <p className="max-w-xl text-[clamp(0.95rem,1.6vw,1.25rem)] leading-snug text-white/60">
-      {children}
-    </p>
-  );
-}
-
-/**
- * StepRow
- *
- * An ordered step: oversized index numeral on the left, text on the right,
- * separated from the next row by a rule. Numbering is legitimate here because
- * joining the table genuinely is a sequence.
- *
- * @param {string} n                  Step number, e.g. "01".
- * @param {string} title              Step title.
- * @param {React.ReactNode} children  Step description.
- * @param {boolean} [last]            Drops the bottom rule on the final row.
- */
-function StepRow({ n, title, children, last }) {
-  return (
-    <div
-      className={
-        "flex items-start gap-4 py-4 sm:gap-6 sm:py-5 " +
-        (last ? "" : "border-b-2 border-white/15")
-      }
-    >
-      <span className="font-display text-[clamp(1.75rem,4vw,3rem)] leading-none tabular-nums text-white/40">
-        {n}
-      </span>
-      <div className="min-w-0">
-        <p className="text-lg font-bold uppercase tracking-tight sm:text-2xl">
-          {title}
-        </p>
-        <p className="mt-1 text-sm leading-snug text-white/60 sm:text-base">
-          {children}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/**
- * OutlineBlock
- *
- * A hollow, outlined card for supporting (non-focal) facts.
- *
- * @param {string} label              Small uppercase label.
- * @param {React.ReactNode} children  Body text.
- */
-function OutlineBlock({ label, children }) {
-  return (
-    <div className="flex h-full flex-col border-2 border-white p-4 sm:p-5">
-      <p className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-white/50">
-        {label}
-      </p>
-      <p className="mt-2 text-sm leading-snug text-white/80 sm:text-base">
-        {children}
-      </p>
-    </div>
-  );
-}
-
-/**
- * FillBlock
- *
- * The inverted (solid white) card. This is the focal element on its page, so
- * use it for the single most important thing.
- *
- * @param {string} label              Small uppercase label.
- * @param {React.ReactNode} children  Body content (already styled for black).
- */
-function FillBlock({ label, children }) {
-  return (
-    <div className="flex h-full flex-col bg-white p-4 !text-black sm:p-5">
-      <p className="text-[0.7rem] font-bold uppercase tracking-[0.25em] !text-black/60">
-        {label}
-      </p>
-      <div className="mt-2">{children}</div>
-    </div>
-  );
-}
-
-/**
- * LedgerRow
- *
- * A quiet reference row: top rule, small term, plain description. Used on the
- * scoring page, which is intentionally the one page with no inversion.
- *
- * @param {string} term               Short label for the rule.
- * @param {React.ReactNode} children  Description.
- */
-function LedgerRow({ term, children }) {
-  return (
-    <div className="border-t-2 border-white/15 py-4">
-      <p className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-white/50">
-        {term}
-      </p>
-      <p className="mt-1.5 text-sm leading-snug text-white/85 sm:text-base">
-        {children}
-      </p>
-    </div>
-  );
 }
 
 /**

@@ -19,6 +19,7 @@ import GameCard from "@/components/GameCard";
 import RotateDialog from '@/components/RotateDialog';
 import Instructions from "@/components/Instructions";
 import CrashOutInstructions from '@/instructions/CrashOutInstructions'
+import SlangInstructions from '@/instructions/SlangInstructions'
 
 import slangGameCardBg from "@/assets/Images/slang_gamecard_bg.webp"
 import slangGameCardBgMobile from "@/assets/Images/slang_gamecard_bg_mobile.webp"
@@ -49,7 +50,7 @@ export default function RoomPage() {
   const handleInfo = (name) => {
     switch (name) {
       case "Slang!":
-        // TODO: add slang instruction set
+        setInstructionSet(SlangInstructions({ lives: 3, turnSeconds: 15, voteThreshold: 40, minWordLength: 3 }));
         instructionsRef.current?.showModal();
         break;
       case "Crash Out":

@@ -89,9 +89,9 @@ export default function Instructions({ ref, instructions }) {
   return (
     <>
       {!isMobile ? (
-        <DesktopDialog ref={ref} content={content} next={next} prev={prev} />
+        <DesktopDialog ref={ref} content={content} next={next} prev={prev} setInstructionsIndex={setInstructionsIndex} />
       ) : (
-        <MobileDialog ref={ref} content={content} next={next} prev={prev} />
+        <MobileDialog ref={ref} content={content} next={next} prev={prev} setInstructionsIndex={setInstructionsIndex} />
       )}
     </>
   );
@@ -105,7 +105,7 @@ export default function Instructions({ ref, instructions }) {
  * un-skewed overlay (title + OK button) layered on top so those two read
  * upright while straddling the panel's top and bottom borders.
  */
-function DesktopDialog({ ref, content, next, prev }) {
+function DesktopDialog({ ref, content, next, prev, setInstructionsIndex }) {
   return (
     <dialog
       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full open:grid grid-cols-[auto_1fr_auto] gap-[100px] place-items-center backdrop:backdrop-blur-sm bg-transparent p-4 z-[9999]"
@@ -115,9 +115,9 @@ function DesktopDialog({ ref, content, next, prev }) {
       <NavigationButton icon={ArrowBigLeftDash} size={40} onClick={prev} />
 
       {/* Center column: skewed shape underneath, upright title/OK overlay on top. */}
-      <div className="relative w-full max-w-[1800px] h-[80%]">
+      <div className="relative w-full max-w-[1800px] h-[80%] ">
         {/* Parallelogram. Its content is counter-skewed so it renders upright. */}
-        <div className="absolute inset-0 bg-black border-2 border-white -skew-x-8 rounded-2xl">
+        <div className="absolute inset-0 bg-black border-2 border-white -skew-x-8 rounded-2xl ">
           <div className="skew-x-8 w-full h-full flex items-center justify-center p-2">
             {content}
           </div>
@@ -132,7 +132,10 @@ function DesktopDialog({ ref, content, next, prev }) {
 
           {/* method="dialog" makes this submit button close the dialog natively. */}
           <form method="dialog" className="-skew-x-8 translate-y-1/2 pointer-events-auto">
-            <button className="flex items-center justify-center bg-white text-black text-4xl font-bold rounded-xl px-24 py-8 border-2 border-black hover:bg-black hover:border-white hover:text-white focus-visible:bg-black focus-visible:border-white focus-visible:text-white cursor-pointer">
+            <button 
+              className="flex items-center justify-center bg-white text-black text-4xl font-bold rounded-xl px-24 py-8 border-2 border-black hover:bg-black hover:border-white hover:text-white focus-visible:bg-black focus-visible:border-white focus-visible:text-white cursor-pointer"
+              onClick={() => setInstructionsIndex(0)}
+              >
               OK
             </button>
           </form>
@@ -152,7 +155,7 @@ function DesktopDialog({ ref, content, next, prev }) {
  * The w-screen/h-screen + max-w-none/max-h-none + m-0 combo overrides the
  * browser's default dialog max-size and centering so it fills the viewport.
  */
-function MobileDialog({ ref, content, next, prev }) {
+function MobileDialog({ ref, content, next, prev, setInstructionsIndex }) {
   return (
     <dialog
       className="open:grid grid-rows-[auto_1fr_auto] gap-4 bg-black w-screen h-screen max-w-none max-h-none m-0 p-0 top-0 left-0 z-[999999]"
@@ -163,7 +166,10 @@ function MobileDialog({ ref, content, next, prev }) {
         <p className="font-bold text-4xl tracking-tight text-white truncate">Instructions</p>
         <button
           className="cursor-pointer shrink-0"
-          onClick={() => ref.current?.close()}
+          onClick={() => {
+            setInstructionsIndex(0);
+            ref.current?.close();
+          }}
           aria-label="close instructions"
         >
           <CircleX size={40} color="#ffffff" />
