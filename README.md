@@ -29,7 +29,7 @@ The main problem it solves is making it easy for groups of people to quickly sta
 * Backend: Python
 * Real time Communication: WebSockets / Socket.IO
 * Hosting: AWS ECS
-* Database: DynamoDB
+* Database: MySQL
 * Project Management: GitHub Projects
 
 ## Repository Structure
