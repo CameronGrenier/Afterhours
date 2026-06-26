@@ -26,7 +26,7 @@ The main problem it solves is making it easy for groups of people to quickly sta
 ## Tech Stack
 
 * Frontend: React
-* Backend: Node.js
+* Backend: Python
 * Real time Communication: WebSockets / Socket.IO
 * Hosting: AWS ECS
 * Database: DynamoDB
@@ -38,7 +38,7 @@ This section will be updated as the project is developed.
 
 ## Current Status
 
-Milestone 01
+Milestone 02
 
 ## Setup Instructions
 
@@ -54,4 +54,7 @@ Milestone 01
 ### Frontend
 1. cd into the `/frontend` directory
 2. install requirements `npm i`
-3. run frontend `npm run dev`
+3. run frontend `npm run dev
+
+## More Information
+More information on the frontend and backend can be found in their dedicated README documents placed in `frontend/README.md` and `backend/README.md`.
