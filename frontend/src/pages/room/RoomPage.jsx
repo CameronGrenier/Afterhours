@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'; 
 import { usePartyContext } from '@/hooks/usePartyContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -40,10 +40,19 @@ const GAMES = [
 ];
 
 export default function RoomPage() {
-  const { isMobile, partyCode, username, isHost } = usePartyContext();
+  const navigate = useNavigate();
+  const { isMobile, partyCode, username, isHost, error } = usePartyContext();
   const isSmallScreen = useMediaQuery("(max-height: 500px), (max-width: 768px)");
   const isMobileLandscape = useMediaQuery("(orientation: landscape)") && isSmallScreen;
   const [instructionSet, setInstructionSet] = useState([]);
+
+  useEffect(() => {
+    if (!partyCode) {
+      error("Party lost, returning to lobby");
+      console.error("Party Code lost");
+      navigate("/");
+    }
+  }, [])
 
   const instructionsRef = useRef();
 
