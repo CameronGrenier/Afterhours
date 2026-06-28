@@ -9,7 +9,6 @@ The app focuses on simple lobby creation, easy joining through lobby codes, and 
 
 * Jake
 * Cameron
-* Arpit
 * Ethan
 * Smaran
 * Daniel
