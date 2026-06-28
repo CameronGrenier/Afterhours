@@ -56,8 +56,8 @@ Milestone 02
 
 ### Frontend
 1. cd into the `/frontend` directory
-2. install requirements `npm i`
-3. run frontend `npm run dev
+2. install requirements by running `npm i`
+3. run frontend `npm run dev`
 
 ## More Information
 More information on the frontend and backend can be found in their dedicated README documents placed in `frontend/README.md` and `backend/README.md`.
