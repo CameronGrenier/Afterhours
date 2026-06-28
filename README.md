@@ -34,7 +34,11 @@ The main problem it solves is making it easy for groups of people to quickly sta
 
 ## Repository Structure
 
-This section will be updated as the project is developed.
+```
+Afterhours/
+├── frontend/     # React SPA (Vite, Tailwind, Socket.IO client) — see frontend/README.md
+└── backend/      # FastAPI + Socket.IO server (Python) — see backend/README.md
+```
 
 ## Current Status
 
