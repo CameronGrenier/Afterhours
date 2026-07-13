@@ -17,11 +17,13 @@
  * @param {string} [className] - Additional CSS classes to apply (optional)
  * @returns {React.ReactNode} Input element
  */
-function Input({ type, placeholderText, onChange, className }) {
+function Input({ type, placeholderText, onChange, className, value }) {
   return (
     <input
       type={type}
+      value={value}
       placeholder={placeholderText}
+      autoComplete="off"
       className={`mx-auto block w-full rounded-md border-2 border-black bg-white py-3 text-center text-2xl text-gray-700 font-medium outline-none focus:placeholder:text-transparent ${className}`}
       onChange={(e) => onChange(e.target.value)}
     />
