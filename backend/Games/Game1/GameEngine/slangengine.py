@@ -1,14 +1,3 @@
-import asyncio
-import math
-import random
-import string
-import time
-from typing import Any, Dict, Tuple
-
-from Games.Game1.GameEngine.playerclass import SlangPlayerClass
-from Games.Game1.GameEngine.word_bank import word_bank
-
-
 """
 - each word must start with the last letter of the previous word
 - Minimum word length is 3 letters
@@ -21,9 +10,20 @@ from Games.Game1.GameEngine.word_bank import word_bank
 - First to lose all 3 lives is the loser, subject to the chosen punishment.
 - If drinking enabled, after each life is lost, player must take a drink.
 """
+import asyncio
+import math
+import random
+import string
+import time
+from typing import Any, Dict, Tuple
+
+from Games.Game1.GameEngine.playerclass import SlangPlayerClass
+from Games.Game1.GameEngine.word_bank import word_bank
+
+
 
 class SlangEngine:
-    # --- Configurable class constants ---
+    # Adjustable game parameters, can be changed through testing
     MINIMUM_PLAYERS = 2
     STARTING_LIVES = 3
     TURN_SECONDS = 15
@@ -59,7 +59,7 @@ class SlangEngine:
         self.round_required_letter = None
         self.chain = []  # accepted words this round
 
-        # Bullsh*t-vote state for the word currently on the table (None if none pending)
+        # Bullsh*t-vote state for the word currently being voted (None if none pending)
         self.pending_word = None
         self.pending_submitter = None
         self.votes = set()
@@ -113,9 +113,8 @@ class SlangEngine:
         self._cancel_vote_timer()
         await self.sio.emit("game_update", {"type": "END_GAME", "payload": {}}, room=self.room)
 
-    # -------------------------------------------------------------------
     # Player-driven events
-    # -------------------------------------------------------------------
+   
     async def handle_event(self, username: str, event_type: str, data: Dict[str, Any]) -> Tuple[bool, str, Any, Any]:
         if username not in self.game_players:
             return False, "User validation failed: Player not associated with this game room.", None, None
@@ -289,7 +288,7 @@ class SlangEngine:
     async def _lose_life(self, player_name: str, reason: str) -> None:
         player = self.game_players[player_name]
         fails_before = player.fails
-        player.add_fail()
+        player.life_lost()
         fails_after = player.fails
 
         self.phase = "drinking"
