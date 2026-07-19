@@ -17,7 +17,7 @@ import string
 import time
 from typing import Any, Dict, Tuple
 
-from Games.Game1.GameEngine.playerclass import SlangPlayerClass
+from Games.Game1.GameEngine.playerclass import SlangPlayer as SlangPlayerClass
 from Games.Game1.GameEngine.word_bank import word_bank
 
 

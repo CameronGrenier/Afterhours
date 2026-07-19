@@ -73,8 +73,8 @@ async def main() -> None:
     print("=== Slang! — play from the terminal ===")
     print("(You'll type as each player in turn. Type 'quit' anytime to bail out.)\n")
 
-    raw = await ainput("Player names, comma-separated (blank = alice,bob): ")
-    players = [n.strip() for n in raw.split(",") if n.strip()] or ["alice", "bob"]
+    raw = await ainput("Player names, comma-separated (blank = player1,player2): ")
+    players = [n.strip() for n in raw.split(",") if n.strip()] or ["player1", "player2"]
 
     if len(players) < SlangEngine.MINIMUM_PLAYERS:
         print(f"Need at least {SlangEngine.MINIMUM_PLAYERS} players.")
