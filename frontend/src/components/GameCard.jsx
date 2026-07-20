@@ -1,3 +1,4 @@
+import { useState} from 'react'
 import { Info } from "lucide-react";
 import { usePartyContext } from '@/hooks/usePartyContext';
 
@@ -18,6 +19,7 @@ export default function GameCard({
   handleInfo,
   handlePlay,
 }) {
+  const [isLoading, setIsLoading] = useState(false);
   const { isMobile } = usePartyContext();
 
   function onInfoClick(event) {
@@ -25,16 +27,33 @@ export default function GameCard({
     handleInfo?.(name);
   }
 
+  const onHandlePlay = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try{
+      await handlePlay(name)
+    }
+    catch (error) {
+      console.error("Error launching game:", error);
+    }finally{
+      setIsLoading(false);
+    }
+  }
+
   return (
     <div
-      className="relative w-full h-full rounded-lg overflow-hidden bg-clip-padding border-2 border-transparent hover:border-white cursor-pointer p-4 xl:p-6"
+      className={`relative w-full h-full rounded-lg overflow-hidden bg-clip-padding border-2 p-4 xl:p-6 ${
+        isLoading 
+          ? "border-white/20 cursor-wait" 
+          : "border-transparent hover:border-white cursor-pointer"
+      }`}
       style={{
         backgroundImage: `url(${imgSrc})`,
         backgroundSize: "cover",
         backgroundPosition: "top",
         backgroundRepeat: "no-repeat",
       }}
-      onClick={handlePlay}
+      onClick={onHandlePlay}
     >
       <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-none" style={{ color }}>
         {name}

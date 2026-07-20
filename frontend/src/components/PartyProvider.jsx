@@ -51,6 +51,10 @@ export function PartyProvider({ children }) {
     setPlayers(data.all_players);
   });
 
+  useSocketEvent("lobby_update", (data) => {
+    console.log("Game Update: ", data.game);
+  });
+
   useSocketEvent("kicked", (data) => {
     warning(data?.message ?? "You were kicked from the room");
     setMode(null);
