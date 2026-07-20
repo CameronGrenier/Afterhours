@@ -71,6 +71,7 @@ class CrashOutEngine:
         for player in players:
             # Create a dictionary of player objects to quicky edit their data
             self.active_players[player] = PlayerClass(player)
+        print(self.active_players)
         self.sio = sio #Used for socket communicaion
         self.room = room
 
@@ -86,14 +87,26 @@ class CrashOutEngine:
         }, room=self.room)
         self.game_task = asyncio.create_task(self.run_game_loop()) #Start the game loop
 
+    def stop(self):
+        #If the seperate game loop task is running, and it isn't done playing the game
+        if self.game_task and not self.game_task.done():
+            self.game_task.cancel()
+
+    def remove_player(self, player_name):
+        """If player is not in the room anymore, remove them from the games list of players"""
+        if player_name in self.active_players:
+            del self.active_players[player_name]
     async def run_game_loop(self):
-        for i in range(self.final_round):
-            await self.start_betting()
-        await self.sio.emit('game_update', {
-            'type': 'END_GAME',
-            'payload': {
-            }
-        }, room=self.room)
+        try:
+            for i in range(self.final_round):
+                await self.start_betting()
+            await self.sio.emit('game_update', {
+                'type': 'END_GAME',
+                'payload': {
+                }
+            }, room=self.room)
+        except asyncio.CancelledError:
+            print("Game has been canceled")
 
 
     async def handle_event(self, username:str, event_type:str, data: Dict[str, Any]):
@@ -196,6 +209,7 @@ class CrashOutEngine:
         for player in self.active_players:
             this_player = self.active_players[player]
             this_player.gain = 0
+            this_player.bet = 0
             if this_player.score == 0:
                 #If someone has lost everything, let them back into the game
                 punishment = True
@@ -252,4 +266,5 @@ class CrashOutEngine:
         progress = (time_elapsed % self.step_duration) / self.step_duration
         multiplier = start_val + (end_val - start_val) * progress
         return multiplier
+
 
