@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'; 
 import { usePartyContext } from '@/hooks/usePartyContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import {selectGame, startGame}from '@/api/room'
+import {selectGame, startGame }from '@/api/room'
 
 // Background topology images with responsive variants
 import topoLandscape from "@/assets/Images/topology_bg_images/topology-landscape.webp";

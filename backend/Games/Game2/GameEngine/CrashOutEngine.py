@@ -144,11 +144,13 @@ class CrashOutEngine:
     async def start_betting(self):
         self.current_round += 1
         print(f"Current Round {self.current_round} Betting Phase")
+        end_betting = time.time() + self.betting_timeout
         await self.sio.emit('game_update', {
             'type': 'PHASE_CHANGE',
             'payload': {
                 'phase': 'betting',
                 'seconds': self.betting_timeout,
+                'timestamp': end_betting
             }
         }, room=self.room)
         await asyncio.sleep(self.betting_timeout)
@@ -158,7 +160,7 @@ class CrashOutEngine:
 
     async def playing_phase(self):
         self.generate_seed()
-        self.blastoff_time = time.time() + 5
+        self.blastoff_time = time.time() + 4
         await self.sio.emit('game_update', {
             'type': 'PHASE_CHANGE',
             'payload': {
@@ -168,7 +170,7 @@ class CrashOutEngine:
                 'step_inverval': self.step_duration
             }
         }, room=self.room)
-        await asyncio.sleep(5) #Sleep for a 5 second countdown
+        await asyncio.sleep(4) #Sleep for a 4 second countdown
         await self.sio.emit('game_update', {
             'type': 'PHASE_CHANGE',
             'payload': {
@@ -187,7 +189,8 @@ class CrashOutEngine:
             key=lambda p: p.gain,
             reverse=True
         )
-        worst_gain = sorted_players[-1].gain
+        if len(sorted_players) > 0:
+            worst_gain = sorted_players[-1].gain
         biggest_loosers = []
         for player in reversed(sorted_players):
             #Flip the list from worst to best gain

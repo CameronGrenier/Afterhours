@@ -43,19 +43,17 @@ export default function CrashOutDemo() {
   const [bet, setBet] = useState(50);
   const [balance, setBalance] = useState(1240);
   const [roundNumber, setRoundNumber] = useState(0);
-  const {gameState, myBalance} = useCrashOutContext();
+  const {gameState, myBalance, multiplier, countdown, progressBar, overlayOpacity, isSubmitting, setIsSubmitting} = useCrashOutContext();
   //Multiplier is from the server only gotta go
-  const [multiplier, setMultiplier] = useState(0);
   const [roundRunning, setRoundRunning] = useState(false);
   const [playerState, setPlayerState] = useState("waiting");
   const [cashout, setCashout] = useState(null);
-
+  const isWaitingToLaunch = gameState === "playing" || gameState === "betting";
   useEffect(() => {
     if (!roundRunning) return undefined;
     const started = performance.now();
     const timer = window.setInterval(() => {
       const elapsed = (performance.now() - started) / 1000;
-      setMultiplier(elapsed * 0.7 + elapsed * elapsed * 0.055);
     }, 50);
     return () => window.clearInterval(timer);
   }, [roundRunning]);
@@ -94,14 +92,25 @@ export default function CrashOutDemo() {
     setBet(Math.max(10, Math.min(balance, next)));
   }
 
-  function placeBet() {
-    if (bet > balance || bet <= 0) return;
-    setCashout(null);
-    setBalance((current) => current - bet);
-    setPlayerState("ready");
-    setMultiplier(0);
-    setRoundRunning(true);
-  }
+  const placeBet = async () => {
+    if (isSubmitting) return; // Guard clause against double-clicks
+    setIsSubmitting(true);
+
+    try {
+      const res = await api.placeBet({ amount: betAmount });
+      
+      if (res.ok) {
+        setPlayerState("ready"); // Move to 'ready' state upon server confirmation
+      } else {
+        console.error("Bet rejected:", res.error);
+        // Optional: Show error toast/notification to player
+      }
+    } catch (err) {
+      console.error("Network error placing bet:", err);
+    } finally {
+      setIsSubmitting(false); // Re-enable interaction
+    }
+  };
 
   function cashOut() {
     if (playerState !== "ready" || !roundRunning) return;
@@ -115,16 +124,15 @@ export default function CrashOutDemo() {
   function resetRound() {
     setPlayerState("waiting");
     setCashout(null);
-    setMultiplier(0);
     setRoundRunning(false);
   }
 
   const primaryLabel =
-    playerState === "waiting"
+    gameState === "betting"
       ? `Send bet · ${money(bet)}`
-      : playerState === "ready"
-        ? `Cash out · ${money(Math.round(bet * multiplier))}`
-        : `Cashed out · ${cashout.multiplier.toFixed(2)}×`;
+      : gameState === "blast_off"
+        ? `Cash out · ${money(Math.round(multiplier * bet))}`
+        : `Market is Closed`;
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-black font-sans text-white">
@@ -139,7 +147,7 @@ export default function CrashOutDemo() {
           <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-wider">
             <span>Round 04</span>
             <span className="inline-flex items-center gap-2 rounded-full border border-orange-500 px-3 py-1 text-orange-500">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" /> Live
+              <span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" /> {gameState}
             </span>
           </div>
         </header>
@@ -173,25 +181,111 @@ export default function CrashOutDemo() {
 
           <section className="order-1 flex min-w-0 flex-col gap-4 lg:order-2">
             <div className="relative min-h-[360px] flex-1 overflow-hidden border border-white/20 bg-[#090909] p-5 md:min-h-[480px] md:p-8">
-              <div className="absolute inset-x-0 bottom-[22%] h-px bg-white/20" />
-              <div className="absolute inset-x-[8%] bottom-[22%] h-[44%] origin-bottom-left skew-y-[-9deg] border-t-2 border-orange-500" />
-              <div className="absolute right-[10%] top-[16%] text-orange-500 transition-transform duration-300" style={{ transform: `translateY(${-Math.min(multiplier * 3, 28)}px) rotate(42deg)` }}>
-                <Rocket size={82} strokeWidth={1.5} fill="currentColor" className="text-orange-500" />
-              </div>
-              <div className="relative flex h-full min-h-[310px] flex-col items-center justify-center text-center">
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-orange-500">
-                  {roundRunning ? "Rocket climbing" : playerState === "cashed" ? "Payout locked" : "Place your bet"}
-                </p>
-                <p className="font-display text-[clamp(5rem,14vw,12rem)] leading-none tracking-[-0.06em] tabular-nums">
-                  {multiplier.toFixed(2)}×
-                </p>
-                <p className="mt-4 max-w-md text-sm text-white/50">
-                  {playerState === "waiting" && "Choose an amount below. Your bet will be shown on the main button before you send it."}
-                  {playerState === "ready" && "You’re in. Cash out any time to lock your current multiplier."}
-                  {playerState === "cashed" && `You locked ${money(cashout.payout)} at ${cashout.multiplier.toFixed(2)}×.`}
-                </p>
-              </div>
-            </div>
+  <div 
+    className={`absolute inset-0 transition-all duration-500 ${
+      gameState === "playing" 
+        ? "blur-sm opacity-30 scale-[0.98] pointer-events-none" 
+        : "blur-0 opacity-100 scale-100"
+    }`}
+  >
+    <div className="absolute inset-x-0 bottom-[22%] h-px bg-white/20" />
+    
+    <div 
+      className="absolute right-0 top-[65%] text-orange-500 transition-transform duration-300" 
+      style={{ 
+        transform: `translateY(${-Math.min(multiplier * 3, 28)}px) rotate(42deg)` 
+      }}
+    >
+      <Rocket size={82} strokeWidth={1.5} fill="currentColor" className="text-orange-500" />
+    </div>
+
+    {/* Future canvas / line chart component goes here */}
+  </div>
+  {isWaitingToLaunch && (() => {
+  const isBetting = gameState === "betting";
+  const isLowTime = isBetting && countdown <= 3.0;
+
+  // Configuration map for clean, readable dynamic styling
+  const config = isBetting
+    ? {
+        badgeBorder: isLowTime ? "border-red-500/50" : "border-emerald-500/30",
+        badgeBg: isLowTime ? "bg-red-500/20" : "bg-emerald-500/10",
+        badgeText: isLowTime ? "text-red-400" : "text-emerald-400",
+        dotColor: isLowTime ? "bg-red-500" : "bg-emerald-500",
+        numberColor: isLowTime ? "text-red-400 animate-pulse" : "text-emerald-300",
+        label: isLowTime ? "LAST CHANCE TO BET!" : "BETTING OPEN",
+        subtext: "Place your wagers now",
+        glow: isLowTime ? "shadow-red-500/20" : "shadow-emerald-500/10",
+      }
+    : {
+        badgeBorder: "border-cyan-500/30",
+        badgeBg: "bg-cyan-500/10",
+        badgeText: "text-cyan-400",
+        dotColor: "bg-cyan-400",
+        numberColor: "text-white",
+        label: "LAUNCH IMMINENT",
+        subtext: "REFUELING & PREPPING ENGINES",
+        glow: "shadow-cyan-500/10",
+      };
+
+  return (
+    <div className={`absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-md transition-all duration-100 ${isBetting ? 'bg-black/50' : 'bg-slate-950/60'}`}
+    style={{opacity: overlayOpacity}}>
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className={`flex items-center gap-2.5 rounded-full border ${config.badgeBorder} ${config.badgeBg} px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] ${config.badgeText} backdrop-blur-sm transition-colors duration-300`}>
+          <span className="relative flex h-2.5 w-2.5">
+            <span className={`absolute inline-flex h-full w-full rounded-full ${config.dotColor} opacity-75 ${isLowTime ? 'animate-ping' : 'animate-pulse'}`}></span>
+            <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${config.dotColor}`}></span>
+          </span>
+          {config.label}
+        </div>
+        <div className="flex items-baseline justify-center">
+          <span className={`font-display text-[clamp(5rem,13vw,9rem)] font-black leading-none tracking-tight tabular-nums drop-shadow-2xl transition-colors duration-300 ${config.numberColor}`}>
+            {gameState === "playing" ? `${countdown.toFixed(1)}s` : ""}
+          </span>
+        </div>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+          {config.subtext}
+        </p>
+      </div>
+    </div>
+  );
+})()}
+
+  {/* ================================================================= */}
+  {/* OVERLAY 2: ACTIVE GAME / CRASH DISPLAY (Active post-countdown)   */}
+  {/* ================================================================= */}
+  {gameState !== "playing" && (
+    <div className="relative z-10 flex h-full min-h-[310px] flex-col items-center justify-center text-center">
+      {/* Dynamic Status Header */}
+      <p className={`mb-2 text-xs font-bold uppercase tracking-[0.3em] ${
+        gameState === "crashed" || gameState === "update_score" 
+          ? "text-red-500" 
+          : "text-orange-500"
+      }`}>
+        {gameState === "blast_off" ? "Current Multiplier" : "Flight Ended"}
+      </p>
+
+      {/* Main Multiplier or Crash Status */}
+      <p className={`font-display text-[clamp(5rem,14vw,12rem)] leading-none tracking-[-0.06em] tabular-nums transition-colors duration-300 ${
+        gameState === "crashed" || gameState === "update_score" 
+          ? "text-red-500 drop-shadow-[0_0_35px_rgba(239,68,68,0.35)]" 
+          : "text-white"
+      }`}>
+        {gameState === "blast_off" 
+          ? `${multiplier.toFixed(2)}×` 
+          : "CRASHED"}
+      </p>
+
+      {/* Subtext */}
+      <p className="mt-4 max-w-md text-sm text-white/50">
+        {gameState === "blast_off" 
+          ? "" 
+          : `Crashed @ ${multiplier.toFixed(2)}x`}
+      </p>
+    </div>
+  )}
+</div>
 
             <div className="grid gap-3 border border-white/20 bg-black p-3 md:grid-cols-[minmax(330px,0.85fr)_minmax(360px,1.15fr)]">
               <div className="flex flex-col gap-3 border border-white/15 p-3">
@@ -215,15 +309,37 @@ export default function CrashOutDemo() {
               </div>
 
               {playerState === "cashed" ? (
-                <button onClick={resetRound} className="flex min-h-28 items-center justify-center gap-3 border-2 border-white bg-white px-6 text-xl font-bold uppercase tracking-wide text-black hover:bg-orange-500">
+                <button 
+                  onClick={resetRound} 
+                  className="flex min-h-28 items-center justify-center gap-3 border-2 border-white bg-white px-6 text-xl font-bold uppercase tracking-wide text-black hover:bg-orange-500"
+                >
                   <RotateCcw /> Next round
                 </button>
               ) : (
                 <button
                   onClick={playerState === "waiting" ? placeBet : cashOut}
-                  className={`min-h-28 border-2 px-6 text-[clamp(1.4rem,3vw,2.6rem)] font-bold uppercase tracking-tight transition active:scale-[0.99] ${playerState === "ready" ? "border-orange-500 bg-orange-500 text-black hover:bg-white" : "border-white bg-white text-black hover:border-orange-500 hover:bg-orange-500"}`}
+                  className={`relative min-h-28 overflow-hidden border-2 text-[clamp(1.4rem,3vw,2.6rem)] font-bold uppercase tracking-tight transition active:scale-[0.99] ${
+                    playerState === "ready"
+                      ? "border-orange-500 bg-orange-500 text-black hover:bg-white"
+                      : "border-white bg-neutral-950 text-white"
+                  }`}
                 >
-                  {primaryLabel}
+                  {/* 1. Draining Background Bar (Betting Phase Only) */}
+                  {gameState === "betting" && (
+                    <div
+                      className="absolute inset-y-0 left-0 bg-white transition-all duration-100 ease-linear"
+                      style={{ width: `${progressBar}%` }}
+                    />
+                  )}
+
+                  {/* 2. Text Layer with Inverted Contrast Trick */}
+                  <span 
+                    className={`relative z-10 ${
+                      gameState === "betting" ? "mix-blend-difference text-white" : ""
+                    }`}
+                  >
+                    {primaryLabel}
+                  </span>
                 </button>
               )}
             </div>

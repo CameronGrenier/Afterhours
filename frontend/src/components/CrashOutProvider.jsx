@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { usePartyContext } from "@/hooks/usePartyContext";
 import {CrashOutContext} from "./CrashOutContext";
 // import { useToast } from "@/hooks/useToast"; // Uncomment if toasts are needed
 
@@ -10,15 +11,87 @@ export function CrashOutProvider({ children }) {
   const [gameState, setGameState] = useState("waiting"); // "waiting" | "running" | "crashed"
   const [multiplier, setMultiplier] = useState(1.00);
   const [hasCrashed, setHasCrashed] = useState(false);
-  const [gamePhase, setGamePhase] = useState("Waiting"); // "Waiting" | "Playing" | "Crashed"
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [overlayOpacity, setOverlayOpacity] = useState(1);
+  const [bettingDuration, setBettingDuration] = useState(0);
+  const [progressBar, setProgressBar] = useState(100); // Progress bar percentage (0-100)
+  const [bettingTimestamp, setBettingTimestamp] = useState(0); // Duration of the betting phase in seconds
+  const [serverStartTime, setServerStartTime] = useState(null); // Server's start time for the current round
+  const [countdown, setCountdown] = useState(0); // Countdown timer
+  const [multiplierInterval, setMultiplierInterval] = useState(0); // Interval ID for updating the multiplier
+  const [multiplierSeed, setMultiplierSeed] = useState([]); // Time at which the game will crash
   const [myBalance, setBalance] = useState(0); // Local user's balance
   const [myBet, setMyBet] = useState(null); // Local user's current bet
   const [roundBets, setRoundBets] = useState([]); // List of all bets in the active round
+  const {serverTimeOffset} = usePartyContext(); 
 
   // =========================================================================
   // Socket Event Listeners
   // =========================================================================
+function getServerTime() {
+    return (Date.now() / 1000) + (serverTimeOffset || 0);
+}
 
+const getMultiplierAtTime = useCallback(() => {
+  //console.log("Interval", multiplierInterval, "Seed", multiplierSeed, "Server Start Time", serverStartTime);
+  const step_duration = multiplierInterval;
+  const seed = multiplierSeed;
+  //console.log("Server Time: ", getServerTime(), "Server Start Time: ", serverStartTime, "Offset: ", serverTimeOffset, "Time Now: ", Date.now() / 1000);
+  const timeElapsed = Math.max(0, getServerTime() - serverStartTime);
+  const index = Math.floor(timeElapsed / step_duration);
+
+  if (index >= seed.length - 1) return 0;
+
+  const startVal = seed[index];
+  const endVal = seed[index + 1];
+  const progress = (timeElapsed % step_duration) / step_duration;
+
+  return startVal + (endVal - startVal) * progress;
+}, [multiplierInterval, multiplierSeed, serverStartTime, serverTimeOffset]);
+
+useEffect(() => {
+  if (gameState !== "playing" || !serverStartTime) return;
+      const interval = setInterval(() => {
+        const now = getServerTime();
+        let remaining = serverStartTime - now;
+        setCountdown(remaining);
+        setOverlayOpacity(Math.min(1, remaining));
+        //console.log("Opactity: ", overlayOpacity, "remaining: ", remaining);
+    }, 100);
+  return () => clearInterval(interval);
+}, [gameState, serverStartTime]);
+
+useEffect(() => {
+  if (gameState !== "betting") return;
+      const interval = setInterval(() => {
+        const now = getServerTime();
+        let remaining = bettingTimestamp - now;
+        setCountdown(remaining);
+        const durationInMs = bettingDuration < 1000 ? bettingDuration * 1000 : bettingDuration;
+        const percentage = Math.max(0, Math.min(100, (remaining / durationInMs) * 100000));
+        //console.log("Progress Bar Percentage: ", percentage);
+        setProgressBar(percentage);
+    }, 100);
+  return () => clearInterval(interval);
+}, [gameState, serverStartTime, bettingTimestamp]);
+
+useEffect(() => {
+  if (gameState !== "blast_off" || !serverStartTime) return;
+  const interval = setInterval(() => {
+    const currentMultiplier = getMultiplierAtTime();
+    //console.log("Current Multiplier: ", currentMultiplier);
+    if (currentMultiplier <= 0) {
+      setMultiplier(0);
+      setHasCrashed(true);
+      setGameState("crashed");
+    } else {
+      setMultiplier(currentMultiplier);
+    }
+  }, 50); // Updates 20 times/sec (change to 100 for 10 times/sec)
+
+  // Clean up the timer when phase changes or component unmounts
+  return () => clearInterval(interval);
+}, [gameState, serverStartTime, getMultiplierAtTime]);
 
 useSocketEvent("game_update", (data) => {
     console.log("Game Update: ", data.type, " payload: ", data.payload);
@@ -26,10 +99,28 @@ useSocketEvent("game_update", (data) => {
         console.log("Game start has been recieved", data.payload.starting_score)
         setBalance(data.payload.starting_score);
     }
-    setGameState(data.payload.phase);
+    else if (data.type === "PHASE_CHANGE") {
+      const phase = data.payload.phase
+      setGameState(phase);
+      if (phase === "betting") {
+        setProgressBar(100);
+        setOverlayOpacity(1);
+        setBettingDuration(data.payload.seconds);
+        setBettingTimestamp(data.payload.timestamp);
+      }
+      else if (phase === "playing") {
+        setServerStartTime(data.payload.start_time);
+        setMultiplierInterval(data.payload.step_inverval);
+        setMultiplierSeed(data.payload.seed);
+      }
+      else if (phase === "update_score") {
+        //Logic for biggest loosers here.
+      }
+    }
+    else if (data.type === "STOP_GAME") {
+        console.log("Game is over");
+    }
 });
-
-
   // =========================================================================
   // Context Value
   // =========================================================================
@@ -45,6 +136,14 @@ useSocketEvent("game_update", (data) => {
     setRoundBets,
     myBalance,
     setBalance,
+    countdown,
+    setCountdown,
+    bettingDuration,
+    bettingTimestamp,
+    progressBar,
+    overlayOpacity,
+    isSubmitting,
+    setIsSubmitting,
   };
 
   return (

@@ -33,7 +33,7 @@ export function PartyProvider({ children }) {
   const [gamePhase, setGamePhase] = useState("None"); // Current game phase: 'None', 'Betting', 'Playing'
   const [username, setUsername] = useState(""); // Formatted username
   const [players, setPlayers] = useState([]); // array of player usernames
-
+  const [serverTimeOffset, setServerTimeOffset] = useState(0); // Offset between server time and local time in seconds
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [sfxVolume, setSfxVolumeValue] = useState(50);
   const [musicVolume, setMusicVolumeValue] = useState(50);
@@ -66,6 +66,7 @@ export function PartyProvider({ children }) {
     setPlayers([]);
     setScreen("home");
   });
+
   // =========================================================================
   // Audio Handling
   // =========================================================================
@@ -143,6 +144,8 @@ export function PartyProvider({ children }) {
     info,
     dismiss,
     handleKickPlayer,
+    setServerTimeOffset,
+    serverTimeOffset,
   };
 
   return (
