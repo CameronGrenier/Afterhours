@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { usePartyContext } from "@/hooks/usePartyContext";
 import {CrashOutContext} from "./CrashOutContext";
+import { placeBet, crashOut } from "@/api/crashout";
 // import { useToast } from "@/hooks/useToast"; // Uncomment if toasts are needed
 
 export function CrashOutProvider({ children }) {
@@ -9,8 +10,11 @@ export function CrashOutProvider({ children }) {
   // Game State
   // =========================================================================
   const [gameState, setGameState] = useState("waiting"); // "waiting" | "running" | "crashed"
+  const [betAmount, setBetAmount] = useState(0);
   const [multiplier, setMultiplier] = useState(1.00);
   const [hasCrashed, setHasCrashed] = useState(false);
+  const [betPlaced, setBetPlaced] = useState(false);
+  const [cashedOut, setCashedOut] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [overlayOpacity, setOverlayOpacity] = useState(1);
   const [bettingDuration, setBettingDuration] = useState(0);
@@ -103,6 +107,8 @@ useSocketEvent("game_update", (data) => {
       const phase = data.payload.phase
       setGameState(phase);
       if (phase === "betting") {
+        setBetPlaced(false);
+        setCashedOut(false);
         setProgressBar(100);
         setOverlayOpacity(1);
         setBettingDuration(data.payload.seconds);
@@ -121,6 +127,59 @@ useSocketEvent("game_update", (data) => {
         console.log("Game is over");
     }
 });
+
+const handlePlaceBet = async () => {
+  if (isSubmitting) return; // Prevent double clicks
+  setIsSubmitting(true);
+
+  try {
+    // 1. Pass the actual bet amount variable from your state
+    const res = await placeBet(betAmount);
+
+    // 2. Handle the server's socket response
+    if (res.status === "success") {
+      //setPlayerState("ready"); // Player is in the game!
+      console.log("Bet placed successfully:", res);
+      setBalance(res.data.score); // Update balance with the new score from the server
+      setBetPlaced(true);
+    } else {
+      console.error("Bet failed:", res.message);
+      // Optional: Show error toast to user
+    }
+  } catch (err) {
+    console.error("Failed to emit bet action:", err);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+const handleCrashOut = async () => {
+  if (isSubmitting) return; // Prevent double clicks
+  setIsSubmitting(true);
+
+  try {
+    // 1. Pass the actual bet amount variable from your state
+    console.log("Multiplier at crash out: ", multiplier);
+    const res = await crashOut(multiplier);
+
+    // 2. Handle the server's socket response
+    if (res.status === "success") {
+      //setPlayerState("ready"); // Player is in the game!
+      console.log("Crashed out successfully:", res);
+      setCashedOut(true);
+      setBalance(res.data.score); // Update balance with the new score from the server
+    } else {
+      console.error("Bet failed:", res.message);
+      // Optional: Show error toast to user
+    }
+  } catch (err) {
+    console.error("Failed to emit bet action:", err);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
   // =========================================================================
   // Context Value
   // =========================================================================
@@ -144,6 +203,10 @@ useSocketEvent("game_update", (data) => {
     overlayOpacity,
     isSubmitting,
     setIsSubmitting,
+    betAmount,
+    setBetAmount,
+    handlePlaceBet,
+    handleCrashOut,
   };
 
   return (

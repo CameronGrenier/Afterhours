@@ -52,13 +52,6 @@ class CrashOutEngine:
     starting_score = 50
     MINIMUM_PLAYERS = 1
     betting_timeout = 8
-    active_players: dict[str, PlayerClass] = {}
-    current_round = 0
-    game_task = None
-    blastoff_time = 0
-    phase = Phases.BETTING #Start in the betting phase of the game
-    seed = None
-    final_round = 5 #can easily make this customizable by the host
     def __init__(self, players, sio, room):
         """
          Initializes the stateful game container for a specific room instance.
@@ -67,6 +60,13 @@ class CrashOutEngine:
          :param sio: The AsyncServer socket instance passed down from RoomManager.
          :param room: The unique string room code used for broadcasting data fields.
          """
+        self.final_round = 5 #can easily make this customizable by the host
+        self.current_round = 0
+        self.game_task = None
+        self.phase = Phases.BETTING #Start in the betting phase of the game
+        self.active_players: dict[str, PlayerClass] = {}
+        self.seed = None
+        self.blastoff_time = 0
         print(f"[Engine] Spin-up sequence initiated for Room: {room}")
         for player in players:
             # Create a dictionary of player objects to quicky edit their data

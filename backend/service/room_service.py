@@ -316,8 +316,10 @@ class RoomService:
         )
 
     async def handle_game_action(self, sid, payload):
+        print("Recieved action")
         self._sio_ready()
         room_code = session_registry.get_room(sid)
+        print("Room code for sid", sid, "is", room_code)
         if room_code is None:
             return {"status": "userError", "message": "Socket is not currently in a room"}
 

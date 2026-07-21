@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { request, socket } from "./client";
 
-const [roundNumber, setRoundNumber] = useState(0);
-
 export const handlePhaseChange = (payload) => {
   if (payload.phase === "Playing") {
     console.log("Game phase changed to Playing. Navigating to game page.");
@@ -10,7 +8,7 @@ export const handlePhaseChange = (payload) => {
 };
 
 export const onSendAction = (event_type, payload) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     socket.emit(
       "game_action",
       {
@@ -39,8 +37,14 @@ export const onSendAction = (event_type, payload) => {
 };
 
 export const placeBet = async (amount) => {
-  return request("/create_room", {
-    method: "POST",
-    body: { username, sid },
+  return await onSendAction("place_bet", { bet: amount });
+};
+
+export const crashOut = async (multiplier) => {
+  const time = Date.now() / 1000;
+  console.log("Given Multiplier: ", multiplier, "at time: ", time);
+  return await onSendAction("cash_out", {
+    cashout_time: time,
+    multiplier: multiplier,
   });
 };

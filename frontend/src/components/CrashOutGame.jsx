@@ -40,10 +40,9 @@ function PlayerState({ player }) {
 export default function CrashOutDemo() {
   
   const { players: lobbyPlayers, username } = usePartyContext();
-  const [bet, setBet] = useState(50);
   const [balance, setBalance] = useState(1240);
   const [roundNumber, setRoundNumber] = useState(0);
-  const {gameState, myBalance, multiplier, countdown, progressBar, overlayOpacity, isSubmitting, setIsSubmitting} = useCrashOutContext();
+  const {gameState, myBalance, multiplier, countdown, progressBar, overlayOpacity, isSubmitting, setIsSubmitting, betAmount, setBetAmount, handlePlaceBet, handleCrashOut, betPlaced, cashedOut} = useCrashOutContext();
   //Multiplier is from the server only gotta go
   const [roundRunning, setRoundRunning] = useState(false);
   const [playerState, setPlayerState] = useState("waiting");
@@ -74,7 +73,7 @@ export default function CrashOutDemo() {
           isYou,
         };
         if (!isYou) return player;
-        if (playerState === "ready") return { ...player, state: "ready", bet };
+        if (playerState === "ready") return { ...player, state: "ready", "bet": betAmount };
         if (playerState === "cashed") {
           return {
             ...player,
@@ -85,36 +84,16 @@ export default function CrashOutDemo() {
         }
         return { ...player, state: "waiting" };
       });
-  }, [bet, cashout, lobbyPlayers, playerState, username]);
+  }, [ cashout, lobbyPlayers, playerState, username]);
 
   function changeBet(next) {
     if (playerState !== "waiting") return;
-    setBet(Math.max(10, Math.min(balance, next)));
+    setBetAmount(Math.max(10, Math.min(balance, next)));
   }
-
-  const placeBet = async () => {
-    if (isSubmitting) return; // Guard clause against double-clicks
-    setIsSubmitting(true);
-
-    try {
-      const res = await api.placeBet({ amount: betAmount });
-      
-      if (res.ok) {
-        setPlayerState("ready"); // Move to 'ready' state upon server confirmation
-      } else {
-        console.error("Bet rejected:", res.error);
-        // Optional: Show error toast/notification to player
-      }
-    } catch (err) {
-      console.error("Network error placing bet:", err);
-    } finally {
-      setIsSubmitting(false); // Re-enable interaction
-    }
-  };
 
   function cashOut() {
     if (playerState !== "ready" || !roundRunning) return;
-    const payout = Math.round(bet * multiplier);
+    const payout = Math.round(betAmount * multiplier);
     setBalance((current) => current + payout);
     setCashout({ multiplier, payout });
     setPlayerState("cashed");
@@ -128,11 +107,13 @@ export default function CrashOutDemo() {
   }
 
   const primaryLabel =
-    gameState === "betting"
-      ? `Send bet · ${money(bet)}`
-      : gameState === "blast_off"
-        ? `Cash out · ${money(Math.round(multiplier * bet))}`
-        : `Market is Closed`;
+    gameState === "betting" && !betPlaced
+      ? `Send bet · ${money(betAmount)}`
+      : gameState === "betting" && betPlaced
+        ? `Bet has been placed`
+        : gameState === "blast_off"
+          ? `Cash out · ${money(Math.round(multiplier * betAmount))}`
+          : `Market is Closed`;
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-black font-sans text-white">
@@ -292,16 +273,16 @@ export default function CrashOutDemo() {
                 <div className="flex items-end justify-between">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/45">Your bet</p>
-                    <p className="text-3xl font-bold tabular-nums">{money(bet)}</p>
+                    <p className="text-3xl font-bold tabular-nums">{money(betAmount)}</p>
                   </div>
                   <div className="flex">
-                    <button aria-label="Decrease bet" disabled={playerState !== "waiting"} onClick={() => changeBet(bet - 10)} className="grid h-10 w-10 place-items-center border border-white/30 enabled:hover:bg-white enabled:hover:text-black disabled:opacity-30"><Minus size={18} /></button>
-                    <button aria-label="Increase bet" disabled={playerState !== "waiting"} onClick={() => changeBet(bet + 10)} className="grid h-10 w-10 place-items-center border-y border-r border-white/30 enabled:hover:bg-white enabled:hover:text-black disabled:opacity-30"><Plus size={18} /></button>
+                    <button aria-label="Decrease bet" disabled={playerState !== "waiting"} onClick={() => changeBet(betAmount - 10)} className="grid h-10 w-10 place-items-center border border-white/30 enabled:hover:bg-white enabled:hover:text-black disabled:opacity-30"><Minus size={18} /></button>
+                    <button aria-label="Increase bet" disabled={playerState !== "waiting"} onClick={() => changeBet(betAmount + 10)} className="grid h-10 w-10 place-items-center border-y border-r border-white/30 enabled:hover:bg-white enabled:hover:text-black disabled:opacity-30"><Plus size={18} /></button>
                   </div>
                 </div>
                 <div className="grid grid-cols-5 gap-1">
                   {BET_OPTIONS.map((amount) => (
-                    <button key={amount} disabled={playerState !== "waiting"} onClick={() => changeBet(amount)} className={`min-h-11 border text-sm font-bold tabular-nums transition ${bet === amount ? "border-orange-500 bg-orange-500 text-black" : "border-white/25 hover:border-white"} disabled:opacity-40`}>
+                    <button key={amount} disabled={playerState !== "waiting"} onClick={() => changeBet(amount)} className={`min-h-11 border text-sm font-bold tabular-nums transition ${betAmount === amount ? "border-orange-500 bg-orange-500 text-black" : "border-white/25 hover:border-white"} disabled:opacity-40`}>
                       ${amount}
                     </button>
                   ))}
@@ -317,7 +298,8 @@ export default function CrashOutDemo() {
                 </button>
               ) : (
                 <button
-                  onClick={playerState === "waiting" ? placeBet : cashOut}
+                  onClick={gameState === "betting" ? handlePlaceBet : 
+                    gameState === "blast_off" ? handleCrashOut : undefined}
                   className={`relative min-h-28 overflow-hidden border-2 text-[clamp(1.4rem,3vw,2.6rem)] font-bold uppercase tracking-tight transition active:scale-[0.99] ${
                     playerState === "ready"
                       ? "border-orange-500 bg-orange-500 text-black hover:bg-white"
