@@ -1,189 +1,192 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { usePartyContext } from "@/hooks/usePartyContext";
-import {CrashOutContext} from "./CrashOutContext";
+import { CrashOutContext } from "./CrashOutContext";
 import { placeBet, crashOut } from "@/api/crashout";
-// import { useToast } from "@/hooks/useToast"; // Uncomment if toasts are needed
 
 export function CrashOutProvider({ children }) {
   // =========================================================================
   // Game State
   // =========================================================================
-  const [gameState, setGameState] = useState("waiting"); // "waiting" | "running" | "crashed"
+  const [gameState, setGameState] = useState("waiting");
   const [betAmount, setBetAmount] = useState(0);
   const [multiplier, setMultiplier] = useState(1.00);
+  const [gain, setGain] = useState(0);
   const [hasCrashed, setHasCrashed] = useState(false);
   const [betPlaced, setBetPlaced] = useState(false);
   const [cashedOut, setCashedOut] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [overlayOpacity, setOverlayOpacity] = useState(1);
   const [bettingDuration, setBettingDuration] = useState(0);
-  const [progressBar, setProgressBar] = useState(100); // Progress bar percentage (0-100)
-  const [bettingTimestamp, setBettingTimestamp] = useState(0); // Duration of the betting phase in seconds
-  const [serverStartTime, setServerStartTime] = useState(null); // Server's start time for the current round
-  const [countdown, setCountdown] = useState(0); // Countdown timer
-  const [multiplierInterval, setMultiplierInterval] = useState(0); // Interval ID for updating the multiplier
-  const [multiplierSeed, setMultiplierSeed] = useState([]); // Time at which the game will crash
-  const [myBalance, setBalance] = useState(0); // Local user's balance
-  const [myBet, setMyBet] = useState(null); // Local user's current bet
-  const [roundBets, setRoundBets] = useState([]); // List of all bets in the active round
-  const {serverTimeOffset} = usePartyContext(); 
+  const [progressBar, setProgressBar] = useState(100);
+  const [bettingTimestamp, setBettingTimestamp] = useState(0);
+  const [serverStartTime, setServerStartTime] = useState(null);
+  const [countdown, setCountdown] = useState(0);
+  const [multiplierInterval, setMultiplierInterval] = useState(0);
+  const [multiplierSeed, setMultiplierSeed] = useState([]);
+  const [myBalance, setBalance] = useState(0);
+  const [myBet, setMyBet] = useState(null);
+  const [roundBets, setRoundBets] = useState([]);
+  
+  const { serverTimeOffset } = usePartyContext(); 
+
+  // Refs for stable calculation values inside continuous interval loops
+  const serverTimeOffsetRef = useRef(serverTimeOffset);
+  const multiplierIntervalRef = useRef(multiplierInterval);
+  const multiplierSeedRef = useRef(multiplierSeed);
+  const serverStartTimeRef = useRef(serverStartTime);
+
+  useEffect(() => { serverTimeOffsetRef.current = serverTimeOffset; }, [serverTimeOffset]);
+  useEffect(() => { multiplierIntervalRef.current = multiplierInterval; }, [multiplierInterval]);
+  useEffect(() => { multiplierSeedRef.current = multiplierSeed; }, [multiplierSeed]);
+  useEffect(() => { serverStartTimeRef.current = serverStartTime; }, [serverStartTime]);
 
   // =========================================================================
-  // Socket Event Listeners
+  // Helper Functions
   // =========================================================================
-function getServerTime() {
-    return (Date.now() / 1000) + (serverTimeOffset || 0);
-}
+  const getServerTime = useCallback(() => {
+    return (Date.now() / 1000) + (serverTimeOffsetRef.current || 0);
+  }, []);
 
-const getMultiplierAtTime = useCallback(() => {
-  //console.log("Interval", multiplierInterval, "Seed", multiplierSeed, "Server Start Time", serverStartTime);
-  const step_duration = multiplierInterval;
-  const seed = multiplierSeed;
-  //console.log("Server Time: ", getServerTime(), "Server Start Time: ", serverStartTime, "Offset: ", serverTimeOffset, "Time Now: ", Date.now() / 1000);
-  const timeElapsed = Math.max(0, getServerTime() - serverStartTime);
-  const index = Math.floor(timeElapsed / step_duration);
+  const getMultiplierAtTime = useCallback(() => {
+    const step_duration = multiplierIntervalRef.current;
+    const seed = multiplierSeedRef.current;
+    const startTime = serverStartTimeRef.current;
 
-  if (index >= seed.length - 1) return 0;
+    if (!startTime || !step_duration || !seed || seed.length === 0) return 1.0;
 
-  const startVal = seed[index];
-  const endVal = seed[index + 1];
-  const progress = (timeElapsed % step_duration) / step_duration;
+    const timeElapsed = Math.max(0, getServerTime() - startTime);
+    const index = Math.floor(timeElapsed / step_duration);
 
-  return startVal + (endVal - startVal) * progress;
-}, [multiplierInterval, multiplierSeed, serverStartTime, serverTimeOffset]);
+    if (index >= seed.length - 1) return 0;
 
-useEffect(() => {
-  if (gameState !== "playing" || !serverStartTime) return;
-      const interval = setInterval(() => {
-        const now = getServerTime();
-        let remaining = serverStartTime - now;
-        setCountdown(remaining);
-        setOverlayOpacity(Math.min(1, remaining));
-        //console.log("Opactity: ", overlayOpacity, "remaining: ", remaining);
+    const startVal = seed[index];
+    const endVal = seed[index + 1];
+    const progress = (timeElapsed % step_duration) / step_duration;
+
+    return startVal + (endVal - startVal) * progress;
+  }, [getServerTime]);
+
+  // =========================================================================
+  // Timers & Loops
+  // =========================================================================
+
+  // 1. Countdown Loop (Phase: "playing")
+  useEffect(() => {
+    if (gameState !== "playing" || !serverStartTime) return;
+
+    const interval = setInterval(() => {
+      const now = getServerTime();
+      const remaining = serverStartTime - now;
+      setCountdown(remaining);
+      setOverlayOpacity(Math.min(1, remaining));
     }, 100);
-  return () => clearInterval(interval);
-}, [gameState, serverStartTime]);
 
-useEffect(() => {
-  if (gameState !== "betting") return;
-      const interval = setInterval(() => {
-        const now = getServerTime();
-        let remaining = bettingTimestamp - now;
-        setCountdown(remaining);
-        const durationInMs = bettingDuration < 1000 ? bettingDuration * 1000 : bettingDuration;
-        const percentage = Math.max(0, Math.min(100, (remaining / durationInMs) * 100000));
-        //console.log("Progress Bar Percentage: ", percentage);
-        setProgressBar(percentage);
+    return () => clearInterval(interval);
+  }, [gameState, serverStartTime, getServerTime]);
+
+  // 2. Progress Bar Loop (Phase: "betting")
+  useEffect(() => {
+    if (gameState !== "betting" || !bettingTimestamp) return;
+
+    const interval = setInterval(() => {
+      const now = getServerTime();
+      const remaining = bettingTimestamp - now;
+      setCountdown(remaining);
+      const durationInMs = bettingDuration < 1000 ? bettingDuration * 1000 : bettingDuration;
+      const percentage = Math.max(0, Math.min(100, (remaining / durationInMs) * 100000));
+      setProgressBar(percentage);
     }, 100);
-  return () => clearInterval(interval);
-}, [gameState, serverStartTime, bettingTimestamp]);
 
-useEffect(() => {
-  if (gameState !== "blast_off" || !serverStartTime) return;
-  const interval = setInterval(() => {
-    const currentMultiplier = getMultiplierAtTime();
-    //console.log("Current Multiplier: ", currentMultiplier);
-    if (currentMultiplier <= 0) {
-      setMultiplier(0);
-      setHasCrashed(true);
-      setGameState("crashed");
-    } else {
-      setMultiplier(currentMultiplier);
-    }
-  }, 50); // Updates 20 times/sec (change to 100 for 10 times/sec)
+    return () => clearInterval(interval);
+  }, [gameState, bettingTimestamp, bettingDuration, getServerTime]);
 
-  // Clean up the timer when phase changes or component unmounts
-  return () => clearInterval(interval);
-}, [gameState, serverStartTime, getMultiplierAtTime]);
+  // 3. Multiplier Blast-Off Loop
+  useEffect(() => {
+    if (gameState !== "blast_off" || !serverStartTime) return;
 
-useSocketEvent("game_update", (data) => {
-    console.log("Game Update: ", data.type, " payload: ", data.payload);
+    const interval = setInterval(() => {
+      const currentMultiplier = getMultiplierAtTime();
+      if (currentMultiplier <= 0) {
+        setMultiplier(0);
+        setHasCrashed(true);
+        setGameState("crashed");
+      } else {
+        setMultiplier(currentMultiplier);
+      }
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [gameState, serverStartTime, getMultiplierAtTime]);
+
+  // =========================================================================
+  // Socket Handlers
+  // =========================================================================
+  useSocketEvent("game_update", (data) => {
     if (data.type === "START_GAME") {
-        console.log("Game start has been recieved", data.payload.starting_score)
-        setBalance(data.payload.starting_score);
-    }
-    else if (data.type === "PHASE_CHANGE") {
-      const phase = data.payload.phase
+      setBalance(data.payload.starting_score);
+    } else if (data.type === "PHASE_CHANGE") {
+      const phase = data.payload.phase;
       setGameState(phase);
       if (phase === "betting") {
+        setBetAmount(0);
+        setHasCrashed(false);
         setBetPlaced(false);
         setCashedOut(false);
         setProgressBar(100);
         setOverlayOpacity(1);
         setBettingDuration(data.payload.seconds);
         setBettingTimestamp(data.payload.timestamp);
-      }
-      else if (phase === "playing") {
+      } else if (phase === "playing") {
         setServerStartTime(data.payload.start_time);
         setMultiplierInterval(data.payload.step_inverval);
         setMultiplierSeed(data.payload.seed);
       }
-      else if (phase === "update_score") {
-        //Logic for biggest loosers here.
+    }
+  });
+
+  // =========================================================================
+  // User Actions
+  // =========================================================================
+  const handlePlaceBet = useCallback(async () => {
+    if (isSubmitting || betAmount === 0) return;
+    setIsSubmitting(true);
+
+    try {
+      const res = await placeBet(betAmount);
+      if (res.status === "success") {
+        setBalance(res.data.score);
+        setBetPlaced(true);
       }
+    } catch (err) {
+      console.error("Failed to place bet:", err);
+    } finally {
+      setIsSubmitting(false);
     }
-    else if (data.type === "STOP_GAME") {
-        console.log("Game is over");
+  }, [isSubmitting, betAmount]);
+
+  const handleCrashOut = useCallback(async () => {
+    if (isSubmitting || betAmount === 0 || cashedOut) return;
+    setIsSubmitting(true);
+
+    try {
+      const res = await crashOut(multiplier);
+      if (res.status === "success") {
+        setCashedOut(true);
+        setBalance(res.data.score);
+        setGain(res.data.multiplier);
+      }
+    } catch (err) {
+      console.error("Failed to crash out:", err);
+    } finally {
+      setIsSubmitting(false);
     }
-});
-
-const handlePlaceBet = async () => {
-  if (isSubmitting) return; // Prevent double clicks
-  setIsSubmitting(true);
-
-  try {
-    // 1. Pass the actual bet amount variable from your state
-    const res = await placeBet(betAmount);
-
-    // 2. Handle the server's socket response
-    if (res.status === "success") {
-      //setPlayerState("ready"); // Player is in the game!
-      console.log("Bet placed successfully:", res);
-      setBalance(res.data.score); // Update balance with the new score from the server
-      setBetPlaced(true);
-    } else {
-      console.error("Bet failed:", res.message);
-      // Optional: Show error toast to user
-    }
-  } catch (err) {
-    console.error("Failed to emit bet action:", err);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-const handleCrashOut = async () => {
-  if (isSubmitting) return; // Prevent double clicks
-  setIsSubmitting(true);
-
-  try {
-    // 1. Pass the actual bet amount variable from your state
-    console.log("Multiplier at crash out: ", multiplier);
-    const res = await crashOut(multiplier);
-
-    // 2. Handle the server's socket response
-    if (res.status === "success") {
-      //setPlayerState("ready"); // Player is in the game!
-      console.log("Crashed out successfully:", res);
-      setCashedOut(true);
-      setBalance(res.data.score); // Update balance with the new score from the server
-    } else {
-      console.error("Bet failed:", res.message);
-      // Optional: Show error toast to user
-    }
-  } catch (err) {
-    console.error("Failed to emit bet action:", err);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
+  }, [isSubmitting, betAmount, cashedOut, multiplier]);
 
   // =========================================================================
-  // Context Value
+  // Memoized Context Value (Prevents lag cascade)
   // =========================================================================
-  const value = {
+  const value = useMemo(() => ({
     gameState,
     setGameState,
     multiplier,
@@ -207,7 +210,29 @@ const handleCrashOut = async () => {
     setBetAmount,
     handlePlaceBet,
     handleCrashOut,
-  };
+    betPlaced,
+    cashedOut,
+    gain,
+  }), [
+    gameState,
+    multiplier,
+    hasCrashed,
+    myBet,
+    roundBets,
+    myBalance,
+    countdown,
+    bettingDuration,
+    bettingTimestamp,
+    progressBar,
+    overlayOpacity,
+    isSubmitting,
+    betAmount,
+    handlePlaceBet,
+    handleCrashOut,
+    betPlaced,
+    cashedOut,
+    gain,
+  ]);
 
   return (
     <CrashOutContext.Provider value={value}>

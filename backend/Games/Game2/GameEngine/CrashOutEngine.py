@@ -241,7 +241,7 @@ class CrashOutEngine:
         #The longer the seed the higher the multipliers, This promotes comebacks as the game progresses
         length = random.randint(1, (6 + self.current_round))
         # Start with 0
-        seed = [1]
+        seed = [0]
         current_value = 0
         for _ in range(length - 1):
             # Determine the "jump" to the next number.
@@ -249,12 +249,12 @@ class CrashOutEngine:
             offset = _ * (0 + self.current_round)
             current_value += offset
             #Make values larger as rounds go on, allows for surprise comebacks.
-            jump = random.randint(1, (1 * self.current_round))
+            jump = random.randint(0, (1 * self.current_round))
             # Add the jump to the current total
             current_value += jump
             # Add a random "wiggle" allow it to be negative by the offset
             wiggle = random.randint((-10 * (offset//4)), (1 * self.current_round))
-            next_val = max(1, current_value + wiggle)  # max(1, ...) keeps it positive
+            next_val = max(1, current_value + wiggle)  # max(0, ...) keeps it positive
             seed.append(next_val)
         self.seed = seed
 
