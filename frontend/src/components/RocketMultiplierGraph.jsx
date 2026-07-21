@@ -11,14 +11,6 @@ const CHART = {
   bottom: 48,
 };
 
-/**
- * Reusable Crash Out graph driven by an external multiplier prop.
- *
- * @param {number} multiplier The live multiplier value from the parent/backend.
- * @param {boolean} running Starts/stops plotting dynamic points.
- * @param {string|number} resetKey Change this value to clear the graph history.
- * @param {string} className Optional sizing/layout classes from the parent.
- */
 export default function RocketMultiplierGraph({
   multiplier = 1.0,
   running = false,
@@ -91,7 +83,7 @@ export default function RocketMultiplierGraph({
   const currPoint = points.at(-1) || { time: lastTime, value: multiplier };
   const dt = currPoint.time - prevPoint.time;
   const dy = currPoint.value - prevPoint.value;
-  const dyDt = dt > 0 ? dy / dt : 0.18 * lastTime; // fallback rate
+  const dyDt = dt > 0 ? dy / dt : 0.18 * lastTime;
 
   const screenSlope = ((dyDt * plotHeight) / yMax) / (plotWidth / xWindow);
   const tangentAngle = -Math.atan(screenSlope) * (180 / Math.PI);
@@ -99,28 +91,30 @@ export default function RocketMultiplierGraph({
 
   return (
     <section
-      className={`relative min-h-[430px] overflow-hidden border border-white/20 bg-[#080808] text-white ${className}`}
+      className={`relative h-full w-full min-h-[430px] overflow-hidden border border-white/20 bg-[#080808] text-white ${className}`}
     >
       <div className="pointer-events-none absolute left-1/2 top-5 z-20 -translate-x-1/2 text-center md:top-7">
         <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-orange-500">
           {running ? "Flight in progress" : "Waiting for launch"}
         </p>
-        <p className={`font-display text-[clamp(5rem,14vw,12rem)] leading-none tracking-[-0.06em] tabular-nums transition-colors duration-300 ${
-        gameState === "crashed" || gameState === "update_score" 
-          ? "text-red-500 drop-shadow-[0_0_35px_rgba(239,68,68,0.35)]" 
-          : "text-white"
-      }`}>
-        {gameState === "blast_off" 
-          ? `${multiplier.toFixed(2)}×` 
-          : "CRASHED"}
-      </p>
-      <p className={`mb-2 text-xs font-bold uppercase tracking-[0.3em] ${
-        gameState === "crashed" || gameState === "update_score" 
-          ? "text-red-500" 
-          : "text-orange-500"
-      }`}>
-        {gameState === "blast_off" ? "" : "Flight Ended"}
-      </p>
+        <p
+          className={`font-display text-[clamp(5rem,14vw,12rem)] leading-none tracking-[-0.06em] tabular-nums transition-colors duration-300 ${
+            gameState === "crashed" || gameState === "update_score"
+              ? "text-red-500 drop-shadow-[0_0_35px_rgba(239,68,68,0.35)]"
+              : "text-white"
+          }`}
+        >
+          {gameState === "blast_off" ? `${multiplier.toFixed(2)}×` : "CRASHED"}
+        </p>
+        <p
+          className={`mb-2 text-xs font-bold uppercase tracking-[0.3em] ${
+            gameState === "crashed" || gameState === "update_score"
+              ? "text-red-500"
+              : "text-orange-500"
+          }`}
+        >
+          {gameState === "blast_off" ? "" : "Flight Ended"}
+        </p>
       </div>
 
       <svg

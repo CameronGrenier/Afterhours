@@ -164,18 +164,12 @@ export default function CrashOutDemo() {
 
           <section className="order-1 flex min-w-0 flex-col gap-4 lg:order-2">
             <div className="relative min-h-[360px] flex-1 overflow-hidden border border-white/20 bg-[#090909] p-5 md:min-h-[480px] md:p-8">
-  <div 
-    className={`absolute inset-0 transition-all duration-500 ${
-      gameState === "playing" 
-        ? "blur-sm opacity-30 scale-[0.98] pointer-events-none" 
-        : "blur-0 opacity-100 scale-100"
-    }`}
-  >
-  
-
-    {/* Future canvas / line chart component goes here */}
-    <RocketMultiplierGraph multiplier={multiplier} running={gameState === "blast_off"} />
-  </div>
+  <div className="relative h-full w-full flex flex-col">
+      <RocketMultiplierGraph
+        multiplier={multiplier}
+        running={gameState === "blast_off"}
+      />
+    </div>
   {isWaitingToLaunch && (() => {
   const isBetting = gameState === "betting";
   const isLowTime = isBetting && countdown <= 3.0;
