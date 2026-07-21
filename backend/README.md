@@ -53,6 +53,17 @@ backend/
 │
 └── Games/
     ├── BaseGameEngine.py    # Abstract template class for game engines
+    │   ├── Game1/
+    │   └── GameEngine/
+    │       ├── slangengine.py     # "Slang!" game engine (fully implemented)
+    │       ├── playerclass.py     # SlangPlayer data model (fails, eliminated)
+    │       ├── word_bank.py       # MySQL-backed word database
+    │       ├── schema.sql         # 4-table schema: Terms/Categories/Term_Category/Logs_table
+    │       ├── slang_words.csv    # starter word list, auto-migrated on import
+    │       ├── conftest.py        # shared pytest fixtures
+    │       ├── test_slangengine.py
+    │       ├── test_word_bank.py
+    │       └── play_test.py        # terminal tool for manually playtesting
     └── Game2/
         ├── GameEngine/
         │   ├── CrashOutEngine.py   # "Crash Out" game engine (fully implemented)
@@ -165,6 +176,24 @@ class GameRoom:
 Player model (`PlayerClass.py`): `name`, `score` (starts at 50), `bet`, `gain`.
 
 ---
+## Database (Slang!)
+
+Unlike the rest of the app, Slang's word data is persisted in a real
+MySQL database — not in-memory. Requires a running MySQL server.
+
+Environment variables (main.py-style, same pattern as FRONTEND_ORIGIN):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| MYSQL_HOST | localhost | MySQL server host |
+| MYSQL_USER | afterhours | App database user |
+| MYSQL_PASSWORD | afterhours_dev | App database password |
+| MYSQL_DATABASE | cp476_afterhours | Database name |
+| MYSQL_PORT | 3306 | MySQL port |
+
+Local setup: see Games/Game1/GameEngine/README.md for full instructions
+(create database, run schema.sql, create app user, install
+mysql-connector-python).
 
 ## Configuration
 
@@ -175,3 +204,13 @@ Environment variables read in `main.py`:
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Comma-separated allowed CORS + Socket.IO origins |
 | `COOKIE_SECURE` | `false` | Require HTTPS for session cookie |
 | `COOKIE_SAMESITE` | `lax` | SameSite policy for session cookie |
+
+Environment variables read in `Slangengine.py`:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MYSQL_HOST` | `localhost` | MySQL server host (used by Slang's word database) |
+| `MYSQL_USER` | `afterhours` | MySQL app user |
+| `MYSQL_PASSWORD` | `afterhours_dev` | MySQL app user password |
+| `MYSQL_DATABASE` | `cp476_afterhours` | MySQL database name |
+| `MYSQL_PORT` | `3306` | MySQL port |
