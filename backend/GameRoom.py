@@ -1,7 +1,9 @@
 from enum import Enum
 from typing import Dict, Any
 
+
 from Games.Game2.GameEngine.CrashOutEngine import CrashOutEngine
+from Games.Game1.GameEngine.slangengine import SlangEngine
 #Assistant Enum classes to limit the bounds of what states and games can be.
 class RoomStates(Enum):
     EMPTY = "Empty"
@@ -12,6 +14,11 @@ class Games(Enum):
     NOT_SELECTED = "Not selected"
     SLANG = "Slang"
     CRASH = "Crash Out"
+    
+GAME_ENGINES = {
+    Games.SLANG: SlangEngine,
+    Games.CRASH: CrashOutEngine,
+}
 
 class GameRoom:
     def __init__(self, room_code, sio):
@@ -57,7 +64,11 @@ class GameRoom:
         else:
             return "Error"
 
-    async def start_game(self): #should be dynamic depending on the game, for now assuming crash out
+    async def start_game(self):
+        engine_class = GAME_ENGINES.get(self.game)
+        if engine_class is None:
+            return "Error"
+
         self.state = RoomStates.PLAYING
         print("engine: ", self.active_engine)
         if self.active_engine is not None and self.active_engine.phase.value == 2:
@@ -71,6 +82,7 @@ class GameRoom:
             return "Success"
         else:
             return "Error"
+        
     def end_game(self):
         self.state = RoomStates.WAITING
 
