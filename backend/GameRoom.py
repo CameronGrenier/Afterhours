@@ -59,7 +59,10 @@ class GameRoom:
 
     async def start_game(self): #should be dynamic depending on the game, for now assuming crash out
         self.state = RoomStates.PLAYING
-        if len(self.players) >= CrashOutEngine.MINIMUM_PLAYERS:
+        print("engine: ", self.active_engine)
+        if self.active_engine is not None and self.active_engine.phase.value == 2:
+            self.active_engine = None
+        if len(self.players) >= CrashOutEngine.MINIMUM_PLAYERS and self.active_engine is None:
             print("There are enough players to start the game")
             self.active_engine = CrashOutEngine(players=self.players, sio=self.sio, room=self.room_code)
             print("Game Engine has been started")

@@ -3,11 +3,13 @@ import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { usePartyContext } from "@/hooks/usePartyContext";
 import { CrashOutContext } from "./CrashOutContext";
 import { placeBet, crashOut } from "@/api/crashout";
+import { useNavigate } from "react-router-dom";
 
 export function CrashOutProvider({ children }) {
   // =========================================================================
   // Game State
   // =========================================================================
+  const navigate = useNavigate();
   const [gameState, setGameState] = useState("waiting");
   const [betAmount, setBetAmount] = useState(0);
   const [multiplier, setMultiplier] = useState(1.00);
@@ -26,7 +28,7 @@ export function CrashOutProvider({ children }) {
   const [multiplierSeed, setMultiplierSeed] = useState([]);
   const [myBalance, setBalance] = useState(0);
   const [myBet, setMyBet] = useState(null);
-  const [roundBets, setRoundBets] = useState([]);
+  const [currentRound, setCurrentRound] = useState(0);
   
   const { serverTimeOffset } = usePartyContext(); 
 
@@ -123,13 +125,17 @@ export function CrashOutProvider({ children }) {
   // Socket Handlers
   // =========================================================================
   useSocketEvent("game_update", (data) => {
+    console.log(data)
     if (data.type === "START_GAME") {
       setBalance(data.payload.starting_score);
     } else if (data.type === "PHASE_CHANGE") {
       const phase = data.payload.phase;
       setGameState(phase);
       if (phase === "betting") {
+        console.log(data)
         setBetAmount(0);
+        setCurrentRound(data.payload.current_round)
+        console.log("Current round", currentRound)
         setHasCrashed(false);
         setBetPlaced(false);
         setCashedOut(false);
@@ -142,6 +148,8 @@ export function CrashOutProvider({ children }) {
         setMultiplierInterval(data.payload.step_inverval);
         setMultiplierSeed(data.payload.seed);
       }
+    } else if (data.type === "END_GAME"){
+      navigate("/room")
     }
   });
 
@@ -194,8 +202,6 @@ export function CrashOutProvider({ children }) {
     hasCrashed,
     myBet,
     setMyBet,
-    roundBets,
-    setRoundBets,
     myBalance,
     setBalance,
     countdown,
@@ -213,12 +219,12 @@ export function CrashOutProvider({ children }) {
     betPlaced,
     cashedOut,
     gain,
+    currentRound,
   }), [
     gameState,
     multiplier,
     hasCrashed,
     myBet,
-    roundBets,
     myBalance,
     countdown,
     bettingDuration,
@@ -232,6 +238,7 @@ export function CrashOutProvider({ children }) {
     betPlaced,
     cashedOut,
     gain,
+    currentRound,
   ]);
 
   return (

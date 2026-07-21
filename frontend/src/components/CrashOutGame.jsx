@@ -3,6 +3,7 @@ import { Check, Minus, Plus, Rocket, RotateCcw } from "lucide-react";
 import RocketMultiplierGraph from "./RocketMultiplierGraph";
 import { usePartyContext } from "@/hooks/usePartyContext";
 import { useCrashOutContext } from "@/hooks/useCrashoutContext";
+import { useNavigate } from "react-router-dom";
 
 const BET_OPTIONS = [10, 25, 50, 100, 250];
 
@@ -43,7 +44,8 @@ export default function CrashOutDemo() {
   const { players: lobbyPlayers, username } = usePartyContext();
   const [balance, setBalance] = useState(1240);
   const [roundNumber, setRoundNumber] = useState(0);
-  const {gameState, myBalance, multiplier, countdown, progressBar, overlayOpacity, isSubmitting, setIsSubmitting, betAmount, setBetAmount, handlePlaceBet, handleCrashOut, betPlaced, cashedOut, gain} = useCrashOutContext();
+  const navigate = useNavigate();
+  const {gameState, myBalance, multiplier, countdown,progressBar, overlayOpacity, isSubmitting, setIsSubmitting, betAmount, setBetAmount, handlePlaceBet, handleCrashOut, betPlaced, cashedOut, gain, currentRound} = useCrashOutContext();
   //Multiplier is from the server only gotta go
   const [roundRunning, setRoundRunning] = useState(false);
   const [playerState, setPlayerState] = useState("waiting");
@@ -128,7 +130,7 @@ export default function CrashOutDemo() {
             <span className="hidden text-sm font-semibold uppercase tracking-[0.2em] text-white/60 sm:block">{gameState}</span>
           </div>
           <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-wider">
-            <span>Round 04</span>
+            <span>{`Round ${currentRound}`}</span>
             <span className="inline-flex items-center gap-2 rounded-full border border-orange-500 px-3 py-1 text-orange-500">
               <span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" /> {gameState}
             </span>

@@ -8,6 +8,7 @@ import random
 class Phases(Enum):
     BETTING = 0
     PLAYING = 1
+    DONE = 2
 
 """Overall Gameplay:
 
@@ -60,7 +61,7 @@ class CrashOutEngine:
          :param sio: The AsyncServer socket instance passed down from RoomManager.
          :param room: The unique string room code used for broadcasting data fields.
          """
-        self.final_round = 5 #can easily make this customizable by the host
+        self.final_round = 2 #can easily make this customizable by the host
         self.current_round = 0
         self.game_task = None
         self.phase = Phases.BETTING #Start in the betting phase of the game
@@ -107,6 +108,8 @@ class CrashOutEngine:
             }, room=self.room)
         except asyncio.CancelledError:
             print("Game has been canceled")
+        self.stop
+        self.phase = Phases.DONE
 
 
     async def handle_event(self, username:str, event_type:str, data: Dict[str, Any]):
@@ -150,7 +153,8 @@ class CrashOutEngine:
             'payload': {
                 'phase': 'betting',
                 'seconds': self.betting_timeout,
-                'timestamp': end_betting
+                'timestamp': end_betting,
+                'current_round': self.current_round
             }
         }, room=self.room)
         await asyncio.sleep(self.betting_timeout)
@@ -255,6 +259,9 @@ class CrashOutEngine:
             # Add a random "wiggle" allow it to be negative by the offset
             wiggle = random.randint((-10 * (offset//4)), (1 * self.current_round))
             next_val = max(1, current_value + wiggle)  # max(0, ...) keeps it positive
+            if next_val == seed[-1]:  # Ensure the next value is not the same as the last
+                next_val /= 5
+                print("Adjusted next_val to avoid duplicate:")
             seed.append(next_val)
         self.seed = seed
 
