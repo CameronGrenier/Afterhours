@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { PartyContext } from "./PartyContext";
-
+import { useNavigate } from 'react-router-dom'; 
 import { useToast } from "@/hooks/useToast";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -21,7 +21,7 @@ export function PartyProvider({ children }) {
   // =========================================================================
   const [sid, setSid] = useState(null); // Socket ID
   const [isHost, setIsHost] = useState(false); // Flag if the user is the host of the room
-  
+  const navigate = useNavigate();
   const [rotateDialogDismissed, setRotateDialogDismissed] = useState(() => { // Flag to track if the user has seen and dismissed a que to rotate out of landscape mobile
     return localStorage.getItem("rotateDialogDismissed") ?? "true"; // load from local storage to persist this setting across refreshes
   }); 
@@ -30,9 +30,10 @@ export function PartyProvider({ children }) {
   const [mode, setMode] = useState(null); // Mode for the join screen determines which handler it uses: "host" | "join"
   const [screen, setScreen] = useState("home"); // Current screen: 'home', 'join', 'lobby'
   const [partyCode, setPartyCode] = useState(""); // Party code entered by user
+  const [gamePhase, setGamePhase] = useState("None"); // Current game phase: 'None', 'Betting', 'Playing'
   const [username, setUsername] = useState(""); // Formatted username
   const [players, setPlayers] = useState([]); // array of player usernames
-
+  const [serverTimeOffset, setServerTimeOffset] = useState(0); // Offset between server time and local time in seconds
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [sfxVolume, setSfxVolumeValue] = useState(50);
   const [musicVolume, setMusicVolumeValue] = useState(50);
@@ -49,6 +50,12 @@ export function PartyProvider({ children }) {
 
   useSocketEvent("player_left", (data) => {
     setPlayers(data.all_players);
+  });
+
+  useSocketEvent("lobby_update", (data) => {
+    console.log("lobby Update: ", data.game);
+    //Later on add slang and other games here
+    navigate(data.game === "Crash Out" ? "/crashout" : "/room");
   });
 
   useSocketEvent("kicked", (data) => {
@@ -137,6 +144,8 @@ export function PartyProvider({ children }) {
     info,
     dismiss,
     handleKickPlayer,
+    setServerTimeOffset,
+    serverTimeOffset,
   };
 
   return (

@@ -220,20 +220,22 @@ class RoomService:
         }
 
     async def select_game(self, request, session_id):
+        print("Selecting game: ", request.game_id)
         self._sio_ready()
         code = request.code
         room = self._get_room(code)
 
-        session, error = verify_host(session_id, code)
+        #session, error = verify_host(session_id, code)
 
         # ensure user is the host
-        if error:
-            return error
+        # if error:
+        #     return error
 
         if room is None:
             return {"status": "codeError", "message": f"Game room {code} does not exist"}
 
         selected_game = room.set_game(request.game_id)
+        print("Sending lobby update: ", selected_game.value)
         await self.sio.emit("lobby_update", {"game": selected_game.value}, room=code)
         return {
             "status": "success",
@@ -245,12 +247,12 @@ class RoomService:
         code = request.code
         room = self._get_room(code)
 
-        session, error = verify_host(session_id, code)
+        #session, error = verify_host(session_id, code)
 
         # ensure user is the host
-        if error:
-            return error
-
+        #if error:
+        #    return error
+        print("Starting room: ", room)
         if room is None:
             return {"status": "codeError", "message": "Room not found"}
 
@@ -314,8 +316,10 @@ class RoomService:
         )
 
     async def handle_game_action(self, sid, payload):
+        print("Recieved action")
         self._sio_ready()
         room_code = session_registry.get_room(sid)
+        print("Room code for sid", sid, "is", room_code)
         if room_code is None:
             return {"status": "userError", "message": "Socket is not currently in a room"}
 

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'; 
 import { usePartyContext } from '@/hooks/usePartyContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import {selectGame, startGame }from '@/api/room'
 
 // Background topology images with responsive variants
 import topoLandscape from "@/assets/Images/topology_bg_images/topology-landscape.webp";
@@ -72,6 +73,33 @@ export default function RoomPage() {
     }
   }
 
+  async function handlePlay(name) {
+    switch (name) {
+      case "Slang!":
+        navigate("/slang");
+        break;
+      case "Crash Out": {
+        console.log("Selecting game: ", name)
+        const response = await selectGame(partyCode, name);
+        const status = response["status"];
+        if (status === "codeError") {
+          error(`Error: room does not exist`);
+          return;
+        }
+        const startGameResponse = await startGame(partyCode);
+        const startGameStatus = startGameResponse["status"];
+        if (startGameStatus === "codeError") {
+          error(`Error: room does not exist`);
+          return;
+        }
+        navigate("/crashout");
+        break;
+      }
+      default:
+        'No game route found for: ' + name;
+    }
+  }
+
   return (
     <main className='relative w-screen h-dvh grid grid-rows-[auto_minmax(0,1fr)] p-6 overflow-hidden'>
 
@@ -115,7 +143,7 @@ export default function RoomPage() {
       <MembersPanel/>
 
       <div className='flex items-center justify-center w-full h-full min-w-0 z-[3]'>
-        <GameCardCarousel handleInfo={handleInfo}/>
+        <GameCardCarousel handleInfo={handleInfo} handlePlay={handlePlay}/>
       </div>
       {!isSmallScreen && <PartyCode isCompact={true} position="br" partyCode={partyCode}/>}
     </main>
@@ -123,7 +151,7 @@ export default function RoomPage() {
 }
 
 
-function GameCardCarousel({ handleInfo }) {
+function GameCardCarousel({ handleInfo, handlePlay }) {
   const { isMobile } = usePartyContext();
 
   const [index, setIndex] = useState(0);
@@ -206,6 +234,7 @@ function GameCardCarousel({ handleInfo }) {
                 name={game.name}
                 imgSrc={isMobile ? game.mobile : game.desktop}
                 handleInfo={handleInfo}
+                handlePlay={handlePlay}
               />
             </div>
           ))}

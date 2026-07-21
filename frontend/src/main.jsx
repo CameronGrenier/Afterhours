@@ -6,9 +6,11 @@ import "./index.css";
 import App from "./pages/home/App.jsx";
 import TestPage from "./pages/test/TestPage.jsx";
 import RoomPage from "./pages/room/RoomPage.jsx";
+import CrashOutPage from "./pages/crashOut/CrashOut.jsx";
 
 import { PartyProvider } from "./components/PartyProvider.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
+import { CrashOutProvider } from "./components/CrashOutProvider.jsx";
 
 /**
  * Application Entry Point
@@ -26,19 +28,22 @@ import { ToastProvider } from "./components/Toast.jsx";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ToastProvider>
-      <PartyProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Landing Page */}
-            <Route path="/" element={<App />} />
-            {/* Room Page */}
-            <Route path="/room" element={<RoomPage />} />
-
-            {/* Component Testing Page */}
-            <Route path="/test" element={<TestPage />} />
-          </Routes>
-        </BrowserRouter>
-      </PartyProvider>
+      <BrowserRouter>
+        <PartyProvider>
+          <CrashOutProvider>
+            <Routes>
+              {/* Landing Page */}
+              <Route path="/" element={<App />} />
+              {/* Room Page */}
+              <Route path="/room" element={<RoomPage />} />
+              {/* CrashOut Game Page */}
+                <Route path="/crashout" element={<CrashOutPage />} />
+              {/* Component Testing Page */}
+              <Route path="/test" element={<TestPage />} />
+            </Routes>
+          </CrashOutProvider>
+        </PartyProvider>
+      </BrowserRouter>
     </ToastProvider>
   </StrictMode>,
 );

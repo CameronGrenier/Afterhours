@@ -53,7 +53,11 @@ class GameRoom:
         print("Removing Player: ", player_name)
         if player_name in self.players:
             self.players.remove(player_name)
+            if self.active_engine is not None:
+                self.active_engine.remove_player(player_name)
             if len(self.players) == 0:
+                if self.active_engine is not None:
+                    self.active_engine.stop()
                 self.state = RoomStates.EMPTY
             print("Remaining Players: ", self.players)
             return "Success"
@@ -66,9 +70,15 @@ class GameRoom:
             return "Error"
 
         self.state = RoomStates.PLAYING
-        if len(self.players) >= engine_class.MINIMUM_PLAYERS:
-            self.active_engine = engine_class(players=self.players, sio=self.sio, room=self.room_code)
-            await self.active_engine.start()
+        print("engine: ", self.active_engine)
+        if self.active_engine is not None and self.active_engine.phase.value == 2:
+            self.active_engine = None
+        if len(self.players) >= CrashOutEngine.MINIMUM_PLAYERS and self.active_engine is None:
+            print("There are enough players to start the game")
+            self.active_engine = CrashOutEngine(players=self.players, sio=self.sio, room=self.room_code)
+            print("Game Engine has been started")
+            await self.active_engine.start() #Start the game loop
+            print("Starting the game loop")
             return "Success"
         else:
             return "Error"

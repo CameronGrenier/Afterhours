@@ -29,8 +29,23 @@ export const leaveRoom = (sid, code, username) => {
 };
 
 export const kickPlayer = (sid, code, targetUsername) => {
-    return request("/kick_player", {
-        method: "POST",
-        body: { sid, code, targetUsername },
-    });
+  return request("/kick_player", {
+    method: "POST",
+    body: { sid, code, targetUsername },
+  });
+};
+
+export const selectGame = (code, game_id) => {
+  console.log("Selecting game: ", game_id, " for room: ", code, " with sid: ");
+  return request("/select_game", {
+    method: "POST",
+    body: { code, game_id },
+  });
+};
+
+export const startGame = (code) => {
+  return request("/start_game", {
+    method: "POST",
+    body: { code },
+  });
 };

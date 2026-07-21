@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? `http://${window.location.hostname}:8000`;
+const BASE_URL = import.meta.env.VITE_API_URL ?? `http://127.0.0.1:8000`;
 import { io } from "socket.io-client";
 
 export const socket = io(BASE_URL);

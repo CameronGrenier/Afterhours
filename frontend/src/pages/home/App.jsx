@@ -72,6 +72,7 @@ export default function App() {
     setMusicVolumeValue,
     warning,
     error,
+    setServerTimeOffset,
   } = usePartyContext();
 
   // =========================================================================
@@ -135,6 +136,7 @@ export default function App() {
     }
     setPartyCode(response["Room Code"]);
     // get server time here
+      setServerTimeOffset(response["Server Time"] - (Date.now() / 1000));
 
     setScreen("lobby");
   }
@@ -161,6 +163,7 @@ export default function App() {
     } else {
       setIsHost(true);
       setPartyCode(response["Room Code"]);
+      setServerTimeOffset(response["Server Time"] - (Date.now() / 1000));
       setPlayers([pascal]);
       setScreen("lobby");
     }
