@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'; 
 import { usePartyContext } from '@/hooks/usePartyContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import {selectGame}from '@/api/room'
+import {selectGame, startGame}from '@/api/room'
 
 // Background topology images with responsive variants
 import topoLandscape from "@/assets/Images/topology_bg_images/topology-landscape.webp";
@@ -79,9 +79,16 @@ export default function RoomPage() {
         navigate("/slang");
         break;
       case "Crash Out": {
+        console.log("Selecting game: ", name)
         const response = await selectGame(partyCode, name);
         const status = response["status"];
         if (status === "codeError") {
+          error(`Error: room does not exist`);
+          return;
+        }
+        const startGameResponse = await startGame(partyCode);
+        const startGameStatus = startGameResponse["status"];
+        if (startGameStatus === "codeError") {
           error(`Error: room does not exist`);
           return;
         }
