@@ -30,7 +30,7 @@ export function CrashOutProvider({ children }) {
   const [myBet, setMyBet] = useState(null);
   const [currentRound, setCurrentRound] = useState(0);
   
-  const { serverTimeOffset } = usePartyContext(); 
+  const { serverTimeOffset, warning } = usePartyContext(); 
 
   // Refs for stable calculation values inside continuous interval loops
   const serverTimeOffsetRef = useRef(serverTimeOffset);
@@ -166,8 +166,11 @@ export function CrashOutProvider({ children }) {
         setBalance(res.data.score);
         setBetPlaced(true);
       }
+      else{
+        warning(res.message)
+      }
     } catch (err) {
-      console.error("Failed to place bet:", err);
+      warning("Failed to place bet")
     } finally {
       setIsSubmitting(false);
     }
@@ -179,13 +182,17 @@ export function CrashOutProvider({ children }) {
 
     try {
       const res = await crashOut(multiplier);
+      console.log(res)
       if (res.status === "success") {
         setCashedOut(true);
         setBalance(res.data.score);
         setGain(res.data.multiplier);
       }
+      else{
+        warning(res.message)
+      }
     } catch (err) {
-      console.error("Failed to crash out:", err);
+      warning("Failed to cash out")
     } finally {
       setIsSubmitting(false);
     }

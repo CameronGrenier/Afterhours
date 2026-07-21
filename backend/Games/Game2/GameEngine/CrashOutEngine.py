@@ -61,7 +61,7 @@ class CrashOutEngine:
          :param sio: The AsyncServer socket instance passed down from RoomManager.
          :param room: The unique string room code used for broadcasting data fields.
          """
-        self.final_round = 2 #can easily make this customizable by the host
+        self.final_round = 5 #can easily make this customizable by the host
         self.current_round = 0
         self.game_task = None
         self.phase = Phases.BETTING #Start in the betting phase of the game
@@ -123,7 +123,7 @@ class CrashOutEngine:
                 print("User Placed Bet")
                 return True, "New bet has been placed", {'score':user.score, 'bet':data['bet']}, {'score':user.score, 'bet':data['bet']}
             else:
-                return False,"Bet was unable to be placed", None, None
+                return False,"You're way too broke to place that bet", None, None
         elif event_type == "cash_out" and self.phase == Phases.PLAYING:
             current_server_time = time.time()
             print(f"Current server time: {current_server_time} Client Time: {data['cashout_time']}")
