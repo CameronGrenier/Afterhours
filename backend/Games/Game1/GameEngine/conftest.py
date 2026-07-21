@@ -4,14 +4,13 @@ from pathlib import Path
 
 import pytest
 
-
-# from this folder.
 REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from Games.Game1.GameEngine import slangengine as slangengine_module
 from Games.Game1.GameEngine.slangengine import SlangEngine
+from Games.Game1.GameEngine.word_bank import word_bank
+
 
 class FakeSio:
     #Records every emit() instead of touching a real socket, so a test can assert 
@@ -36,51 +35,43 @@ def fake_sio():
 
 
 @pytest.fixture
-def engine(fake_sio):
-    #test engine with two players, alice and bob, in a room called "test-room"
-    players = ["alice", "bob"]
-    return SlangEngine(players, fake_sio, room="test-room")
-
-class FakeWordBank:
-    #Swaps in for the real sqlite-backed word_bank so tests don't touch words.db
-    #and can control exactly what counts as a "real" word.
-
-    def __init__(self, recognized_words=None, letters=None):
-        self.recognized_words = set(recognized_words or [])
-        self.letters = list(letters or ["a", "b", "c", "d", "e"])
-        self.candidates_added = []  # (word, added_by) pairs, for assertions
-
-    def contains(self, word, category):
-        return word in self.recognized_words
-
-    def letters_with_words(self, category):
-        return self.letters
-
-    def add_candidate(self, word, added_by=None):
-        self.candidates_added.append((word, added_by))
-
-
-@pytest.fixture
-def fake_word_bank(monkeypatch):
-    #replaces the word_bank that slangengine.py already imported, so the
-    #engine talks to the fake instead of the real sqlite database
-    fwb = FakeWordBank()
-    monkeypatch.setattr(slangengine_module, "word_bank", fwb)
-    return fwb
-
-
-@pytest.fixture
-def fast_engine(monkeypatch, fake_sio, fake_word_bank):
+def fast_engine(monkeypatch, fake_sio):
     #shrinks the turn/vote/drinking timers down to almost nothing, so tests
     #that rely on a timeout firing don't actually sit around for 15 real seconds
     monkeypatch.setattr(SlangEngine, "TURN_SECONDS", 0.05)
     monkeypatch.setattr(SlangEngine, "VOTE_SECONDS", 0.05)
     monkeypatch.setattr(SlangEngine, "DRINKING_PAUSE_SECONDS", 0.01)
 
-    def _build(players=("alice", "bob"), room="test-room"):
+    def _build(players=("player1", "player2"), room="test-room"):
         return SlangEngine(list(players), fake_sio, room)
 
     return _build
+
+@pytest.fixture(autouse=True)
+def clean_up_words_added_during_test():
+    cursor = word_bank._conn.cursor()
+    cursor.execute("SELECT COALESCE(MAX(term_id), 0) FROM Terms")
+    before_max_term_id = cursor.fetchone()[0]
+    cursor.execute("SELECT COALESCE(MAX(log_id), 0) FROM Logs_table")
+    before_max_log_id = cursor.fetchone()[0]
+    cursor.close()
+ 
+    yield
+ 
+    cursor = word_bank._conn.cursor()
+    cursor.execute("DELETE FROM Term_Category WHERE term_id > %s", (before_max_term_id,))
+    cursor.execute("DELETE FROM Terms WHERE term_id > %s", (before_max_term_id,))
+    cursor.execute("DELETE FROM Logs_table WHERE log_id > %s", (before_max_log_id,))
+    word_bank._conn.commit()
+    cursor.close()
+ 
+ 
+def real_word_starting_with(letter):
+    cursor = word_bank._conn.cursor()
+    cursor.execute("SELECT term FROM Terms WHERE term LIKE %s LIMIT 1", (letter + "%",))
+    row = cursor.fetchone()
+    cursor.close()
+    return row[0] if row else None
 
 
 async def confirm_all(engine, players):

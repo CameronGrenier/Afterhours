@@ -48,14 +48,14 @@ class PrintSio:
                       f"| previous word: {p.get('previousWord')} ---")
                 print(f"    Fails so far: {p['fails']}")
                 if p.get("pendingWord"):
-                    print(f"    ⚖️  Vote pending on '{p['pendingWord']}' "
+                    print(f"      Vote pending on '{p['pendingWord']}' "
                           f"({p['voteCount']}/{p['votesNeeded']} votes needed)")
             elif phase == "drinking":
-                print(f"\n💥 {p['playerName']} lost a life! ({p['reason']}) "
+                print(f"\n {p['playerName']} lost a life! ({p['reason']}) "
                       f"Fails: {p['failsBefore']} -> {p['failsAfter']}. "
                       f"Next up: {p['nextPlayerName']}")
             elif phase == "blackout":
-                print(f"\n💀 {p['eliminatedPlayer']} is ELIMINATED.")
+                print(f"\n {p['eliminatedPlayer']} is ELIMINATED.")
                 print(f"    Standings: {p['standings']}")
 
         elif update_type == "END_GAME":

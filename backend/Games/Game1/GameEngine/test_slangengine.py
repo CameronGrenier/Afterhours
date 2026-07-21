@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from conftest import confirm_all
+from conftest import confirm_all, real_word_starting_with
 
 pytestmark = pytest.mark.asyncio
 
@@ -96,14 +96,14 @@ async def test_only_current_player_can_submit(fast_engine):
 # Word submission: recognized word -> instant accept
 
 
-async def test_recognized_word_is_accepted_and_advances_turn(fast_engine, fake_word_bank):
+async def test_recognized_word_is_accepted_and_advances_turn(fast_engine):
     engine = fast_engine(players=["player1", "player2"])
     await engine.start()
     await confirm_all(engine, ["player1", "player2"])
 
     required = engine.round_required_letter
-    word = required + "ab"
-    fake_word_bank.recognized_words.add(word)
+    word = real_word_starting_with(required)
+    assert word is not None, f"no real word in the database starts with '{required}'"
     current = engine.current_player()
 
     ok, msg, result, broadcast = await engine.handle_event(
@@ -119,13 +119,13 @@ async def test_recognized_word_is_accepted_and_advances_turn(fast_engine, fake_w
 # Word submission: unrecognized word -> bullsh*t vote
 
 
-async def test_unrecognized_word_opens_a_vote(fast_engine, fake_word_bank):
+async def test_unrecognized_word_opens_a_vote(fast_engine):
     engine = fast_engine(players=["player1", "player2", "carol"])
     await engine.start()
     await confirm_all(engine, ["player1", "player2", "carol"])
 
     required = engine.round_required_letter
-    word = required + "xyz"  # deliberately not in fake_word_bank.recognized_words
+    word = required + "xyz"  # deliberately not a real word in the database
     current = engine.current_player()
 
     ok, msg, result, _ = await engine.handle_event(current, "submit_word", {"word": word})
@@ -135,7 +135,7 @@ async def test_unrecognized_word_opens_a_vote(fast_engine, fake_word_bank):
     assert engine.pending_submitter == current
 
 
-async def test_vote_reaching_threshold_costs_submitter_a_life(fast_engine, fake_word_bank):
+async def test_vote_reaching_threshold_costs_submitter_a_life(fast_engine):
     engine = fast_engine(players=["player1", "player2", "carol"])
     await engine.start()
     await confirm_all(engine, ["player1", "player2", "carol"])
@@ -157,7 +157,9 @@ async def test_vote_reaching_threshold_costs_submitter_a_life(fast_engine, fake_
     assert word not in engine.chain  # rejected word never joins the chain
 
 
-async def test_vote_timeout_lets_word_stand_as_candidate(fast_engine, fake_word_bank):
+async def test_vote_timeout_lets_word_stand_as_candidate(fast_engine):
+    from Games.Game1.GameEngine.word_bank import word_bank
+
     engine = fast_engine(players=["player1", "player2"])
     await engine.start()
     await confirm_all(engine, ["player1", "player2"])
@@ -174,13 +176,26 @@ async def test_vote_timeout_lets_word_stand_as_candidate(fast_engine, fake_word_
     # nobody votes; wait past VOTE_SECONDS (0.05s in this fixture)
     await asyncio.sleep(0.2)
 
-    assert (word, submitter) in fake_word_bank.candidates_added
+    cursor = word_bank._conn.cursor()
+    cursor.execute(
+        """
+        SELECT Categories.category FROM Logs_table
+        JOIN Categories ON Logs_table.category_id = Categories.category_id
+        WHERE Logs_table.log = %s
+        """,
+        (word,),
+    )
+    row = cursor.fetchone()
+    cursor.close()
+    assert row is not None, f"'{word}' was not written to Logs_table"
+    assert row[0] == "Candidates"
+
     assert word in engine.chain
     assert engine.pending_word is None
     assert engine.game_players[submitter].fails == 0  # word stood, no life lost
 
 
-async def test_voter_cannot_vote_twice(fast_engine, fake_word_bank):
+async def test_voter_cannot_vote_twice(fast_engine):
     engine = fast_engine(players=["player1", "player2", "carol", "dave"])
     await engine.start()
     await confirm_all(engine, ["player1", "player2", "carol", "dave"])

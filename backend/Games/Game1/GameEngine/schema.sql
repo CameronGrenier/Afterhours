@@ -5,20 +5,24 @@
 -- in that pool are NOT valid for gameplay until a human promotes them into a
 -- real category — see word_bank.promote_candidate().
 
-CREATE TABLE IF NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    is_candidate_pool INTEGER NOT NULL DEFAULT 0
+CREATE TABLE IF NOT EXISTS cp476_afterhours.Terms (
+term_id INT AUTO_INCREMENT PRIMARY KEY,
+term VARCHAR(100) NOT NULL
 );
-
-CREATE TABLE IF NOT EXISTS words (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    word TEXT NOT NULL,
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-    added_by TEXT,                              -- username who submitted it; NULL for seeded words
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(word, category_id)
+CREATE TABLE IF NOT EXISTS cp476_afterhours.Categories (
+category_id INT AUTO_INCREMENT PRIMARY KEY,
+category VARCHAR(100) NOT NULL
 );
-
-CREATE INDEX IF NOT EXISTS idx_words_word ON words(word);
-CREATE INDEX IF NOT EXISTS idx_words_category ON words(category_id);
+CREATE TABLE IF NOT EXISTS cp476_afterhours.Term_Category (
+term_id INT,
+category_id INT,
+PRIMARY KEY (term_id, category_id),
+FOREIGN KEY (term_id) REFERENCES Terms(term_id),
+FOREIGN KEY (category_id) REFERENCES Categories(category_id)
+);
+CREATE TABLE IF NOT EXISTS cp476_afterhours.Logs_table (
+log_id INT AUTO_INCREMENT PRIMARY KEY,
+category_id INT,
+log VARCHAR(32) NOT NULL,
+FOREIGN KEY (category_id) REFERENCES Categories(category_id)
+);
