@@ -241,6 +241,24 @@ class WordBank:
             deleted = cursor.rowcount > 0
             cursor.close()
             return deleted
+    def rename_term(self, old_word: str, new_word: str) -> bool:
+        """
+        UPDATE operation: fixes a typo in an existing real word without
+        deleting and recreating it. Returns True if a
+        matching term was found and renamed, False otherwise.
+        """
+        old_word = old_word.strip().lower()
+        new_word = new_word.strip().lower()
+        with self._lock:
+            cursor = self._conn.cursor()
+            cursor.execute(
+                "UPDATE Terms SET term = %s WHERE term = %s",
+                (new_word, old_word),
+            )
+            updated = cursor.rowcount > 0
+            self._conn.commit()
+            cursor.close()
+            return updated
 
 
 word_bank = WordBank()

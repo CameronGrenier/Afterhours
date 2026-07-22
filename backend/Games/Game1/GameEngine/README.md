@@ -76,12 +76,6 @@ pytest test_slangengine.py test_word_bank.py -v
 Expect `23 passed`. Both files can also be run separately if you only
 want one or the other.
 
-**Important:** these tests run against your **real** database, not a
-throwaway copy. An automatic cleanup step in `conftest.py` deletes
-anything a test adds once that test finishes, so running the suite
-repeatedly won't leave junk words behind — but it does mean MySQL has
-to actually be running for any of this to work at all.
-
 ---
 
 ## Playtesting (actually playing a game)
