@@ -189,6 +189,18 @@ const setAllPlayersState = (newState) => {
   );
 };
 
+const setAllPlayersScore = (newScore) => {
+  setPlayers((prev) =>
+    Object.keys(prev).reduce((acc, playerId) => {
+      acc[playerId] = {
+        ...prev[playerId],
+        score: newScore, // Overwrites 'state' for every player
+      };
+      return acc;
+    }, {})
+  );
+};
+
 const checkWhoCrashed = () => {
   setPlayers((prev) =>
     Object.keys(prev).reduce((acc, playerId) => {
@@ -203,7 +215,6 @@ const checkWhoCrashed = () => {
     }, {})
   );
 };
-
 
   useEffect(() => {
     if (gameState !== "blast_off" || !serverStartTime) return;
@@ -223,14 +234,13 @@ const checkWhoCrashed = () => {
     return () => clearInterval(interval);
   }, [gameState, serverStartTime, getMultiplierAtTime]);
 
- 
-
 const updateBet = (playerId, newBet) => {
   setPlayers((prev) => ({
     ...prev,
     [playerId]: {
       ...prev[playerId],
       bet: newBet, // Overwrites ONLY score; keeps avatar, state, etc.
+      score: prev[playerId].score ? prev[playerId].score - newBet : "NA"
     },
   }));
 };
@@ -244,6 +254,7 @@ const updateBet = (playerId, newBet) => {
     const payload = data.payload
     if (data.type === "START_GAME") {
       setBalance(payload.starting_score);
+      setAllPlayersScore(payload.starting_score)
     } else if (data.type === "PHASE_CHANGE") {
       const phase = payload.phase;
       

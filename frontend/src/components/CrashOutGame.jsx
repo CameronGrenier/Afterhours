@@ -19,7 +19,7 @@ function PlayerState({ player }) {
   if (player.state === "cashed_out") {
     return (
       <span className="flex flex-col text-xs font-bold uppercase tracking-wider text-white leading-none gap-0.5">
-        <span>Crashed out </span>
+        <span>Cashed out </span>
         <span>@ {player.multiplier.toFixed(2)}x</span>
       </span>
     );
@@ -96,15 +96,36 @@ export default function CrashOutDemo() {
                 {Object.values(players).map((player) => (
                   <div
                     key={player.id}
-                    className={`flex items-center gap-3 border p-3 ${player.isYou ? "border-orange-500 bg-orange-500/10" : "border-white/10"}`}
+                    className={`flex items-center gap-3 border p-3 ${
+                      player.isYou ? "border-orange-500 bg-orange-500/10" : "border-white/10"
+                    }`}
                   >
-                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-bold ${player.state === "cashed_out" ? "bg-emerald-500 text-white" : player.state === "bet_placed" ? "bg-emerald-500/50 text-white" : player.state === "crashed" ? "bg-red-500" : "border-2 border-white/50 bg-white/10"}`}>
+                    <span
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-bold ${
+                        player.state === "cashed_out"
+                          ? "bg-emerald-500 text-white"
+                          : player.state === "bet_placed"
+                          ? "bg-emerald-500/50 text-white"
+                          : player.state === "crashed"
+                          ? "bg-red-500"
+                          : "border-2 border-white/50 bg-white/10"
+                      }`}
+                    >
                       {player.avatar}
                     </span>
-                    <span className="min-w-0">
-                      <span className="block truncate font-bold uppercase">{player.name}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-bold uppercase">{player.id}</span>
                       <PlayerState player={player} />
                     </span>
+
+                    {/* Right side: Score as Currency */}
+                    <div className="ml-auto text-right font-mono font-bold text-emerald-400">
+                      {typeof player.score === "number"
+                        ? `${money(player.score)}`
+                        : player.score === "NA"
+                        ? "$0.00"
+                        : `$${player.score}`}
+                    </div>
                   </div>
                 ))}
               </div>
