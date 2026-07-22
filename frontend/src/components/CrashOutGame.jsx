@@ -40,6 +40,15 @@ function PlayerState({ player }) {
     );
   }
 
+    if (player.state === "no_bet") {
+    return (
+      <span className="flex flex-col text-xs font-bold uppercase tracking-wider leading-none gap-0.1">
+        <span className="text-xs font-bold uppercase tracking-wider text-red-200">Didn't bet </span>
+        <span className="text-xs font-bold uppercase tracking-wider text-red-200/50">99% of gamblers quit before they hit it big</span>
+      </span>
+    );
+  }
+
   return (
     <span className="text-xs font-medium uppercase tracking-wider text-white/45">
       Waiting for bet

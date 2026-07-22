@@ -216,6 +216,21 @@ const checkWhoCrashed = () => {
   );
 };
 
+const checkWhoDidntBet = () => {
+  setPlayers((prev) =>
+    Object.keys(prev).reduce((acc, playerId) => {
+      const player = prev[playerId];
+
+      acc[playerId] =
+        player.state !== "bet_placed"
+          ? { ...player, state: "no_bet" }
+          : player; 
+
+      return acc;
+    }, {})
+  );
+};
+
   useEffect(() => {
     if (gameState !== "blast_off" || !serverStartTime) return;
 
@@ -273,6 +288,7 @@ const updateBet = (playerId, newBet) => {
         setBettingDuration(payload.seconds);
         setBettingTimestamp(payload.timestamp);
       } else if (phase === "playing") {
+        checkWhoDidntBet()
         setServerStartTime(payload.start_time);
         setMultiplierInterval(payload.step_inverval);
         setMultiplierSeed(payload.seed);
