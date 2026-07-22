@@ -16,18 +16,26 @@ function money(value) {
 }
 
 function PlayerState({ player }) {
-  if (player.state === "ready") {
+  if (player.state === "cashed_out") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-orange-500">
-        <Check size={14} strokeWidth={3} /> Ready · {money(player.bet)}
+      <span className="flex flex-col text-xs font-bold uppercase tracking-wider text-white leading-none gap-0.5">
+        <span>Crashed out </span>
+        <span>@ {player.multiplier.toFixed(2)}x</span>
       </span>
     );
   }
 
-  if (player.state === "cashed") {
+  if (player.state === "bet_placed") {
     return (
-      <span className="text-xs font-bold uppercase tracking-wider text-white">
-        {player.cashout.toFixed(2)}× · {money(player.payout)}
+      <span className="text-xs font-bold uppercase tracking-wider text-emerald-200">
+        Bet: {money(player.bet)}
+      </span>
+    );
+  }
+  if (player.state === "crashed") {
+    return (
+      <span className="text-xs font-bold uppercase tracking-wider text-red-200">
+        CRASHED OUT
       </span>
     );
   }
@@ -41,75 +49,14 @@ function PlayerState({ player }) {
 
 export default function CrashOutDemo() {
   
-  const { players: lobbyPlayers, username } = usePartyContext();
-  const [balance, setBalance] = useState(1240);
-  const [roundNumber, setRoundNumber] = useState(0);
-  const navigate = useNavigate();
-  const {gameState, myBalance, multiplier, countdown,progressBar, overlayOpacity, isSubmitting, setIsSubmitting, betAmount, setBetAmount, handlePlaceBet, handleCrashOut, betPlaced, cashedOut, gain, currentRound} = useCrashOutContext();
+  const {gameState, myBalance, multiplier, countdown,progressBar, overlayOpacity, betAmount, setBetAmount, handlePlaceBet, handleCrashOut, betPlaced, cashedOut, gain, currentRound, playerState, players} = useCrashOutContext();
   //Multiplier is from the server only gotta go
-  const [roundRunning, setRoundRunning] = useState(false);
-  const [playerState, setPlayerState] = useState("waiting");
-  const [cashout, setCashout] = useState(null);
-  const stylizeButton = gameState === "betting" || gameState === "blast_off";
   const isWaitingToLaunch = gameState === "playing" || gameState === "betting";
-  useEffect(() => {
-    if (!roundRunning) return undefined;
-    const started = performance.now();
-    const timer = window.setInterval(() => {
-      const elapsed = (performance.now() - started) / 1000;
-    }, 50);
-    return () => window.clearInterval(timer);
-  }, [roundRunning]);
-
-  const players = useMemo(() => {
-    const currentName = username || "You";
-    const roster = lobbyPlayers.length
-      ? Array.from(new Set([...lobbyPlayers, currentName]))
-      : [currentName];
-
-    return roster.map((name, index) => {
-        const isYou = name === currentName;
-        const player = {
-          id: `${name}-${index}`,
-          name,
-          avatar: name.slice(0, 2).toUpperCase(),
-          state: "waiting",
-          isYou,
-        };
-        if (!isYou) return player;
-        if (playerState === "ready") return { ...player, state: "ready", "bet": betAmount };
-        if (playerState === "cashed") {
-          return {
-            ...player,
-            state: "cashed",
-            cashout: cashout.multiplier,
-            payout: cashout.payout,
-          };
-        }
-        return { ...player, state: "waiting" };
-      });
-  }, [ cashout, lobbyPlayers, playerState, username]);
 
   function changeBet(next) {
-    if (gameState !== "betting" && !betPlaced) return;
-    setBetAmount(Math.max(10, Math.min(balance, next)));
+    if (betPlaced || gameState !== "betting") return;
+    setBetAmount(Math.max(10, Math.min(myBalance, next)));
   }
-
-  function cashOut() {
-    if (playerState !== "ready" || !roundRunning) return;
-    const payout = Math.round(betAmount * multiplier);
-    setBalance((current) => current + payout);
-    setCashout({ multiplier, payout });
-    setPlayerState("cashed");
-    setRoundRunning(false);
-  }
-
-  function resetRound() {
-    setPlayerState("waiting");
-    setCashout(null);
-    setRoundRunning(false);
-  }
-
   const primaryLabel =
     gameState === "betting" && !betPlaced
       ? `Send bet · ${money(betAmount)}`
@@ -146,12 +93,12 @@ export default function CrashOutDemo() {
             <div className="p-3">
               <p className="px-2 pb-3 text-xs font-bold uppercase tracking-[0.22em] text-white/45">Players</p>
               <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-1">
-                {players.map((player) => (
+                {Object.values(players).map((player) => (
                   <div
                     key={player.id}
                     className={`flex items-center gap-3 border p-3 ${player.isYou ? "border-orange-500 bg-orange-500/10" : "border-white/10"}`}
                   >
-                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-bold ${player.state === "cashed" ? "bg-orange-500 text-black" : "border-2 border-white/50 bg-white/10"}`}>
+                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-bold ${player.state === "cashed_out" ? "bg-emerald-500 text-white" : player.state === "bet_placed" ? "bg-emerald-500/50 text-white" : player.state === "crashed" ? "bg-red-500" : "border-2 border-white/50 bg-white/10"}`}>
                       {player.avatar}
                     </span>
                     <span className="min-w-0">
@@ -244,73 +191,60 @@ export default function CrashOutDemo() {
                   ))}
                 </div>
               </div>
-
-              {playerState === "cashed" ? (
-                <button 
-                  onClick={resetRound} 
-                  className="flex min-h-28 items-center justify-center gap-3 border-2 border-white bg-white px-6 text-xl font-bold uppercase tracking-wide text-black hover:bg-orange-500"
-                >
-                  <RotateCcw /> Next round
-                </button>
-              ) : (
-                <button
-                  onClick={gameState === "betting" && !betPlaced ? handlePlaceBet : 
-                    gameState === "blast_off" && !cashedOut ? handleCrashOut : undefined}
-                  className={`relative min-h-28 overflow-hidden border-2 text-[clamp(1.4rem,3vw,2.6rem)] font-bold uppercase tracking-tight transition active:scale-[0.99] ${
-                    playerState === "ready"
-                      ? "border-orange-500 bg-orange-500 text-black hover:bg-white"
-                      : "border-white bg-neutral-950 text-white"
-                  }`}
-                >
-                  {/* 1. Draining Background Bar (Betting Phase Only) */}
-                  {gameState === "betting" && (
-                    <>
+              <button
+                onClick={gameState === "betting" && !betPlaced ? handlePlaceBet : 
+                  gameState === "blast_off" && !cashedOut ? handleCrashOut : undefined}
+                className={`relative min-h-28 overflow-hidden border-2 text-[clamp(1.4rem,3vw,2.6rem)] font-bold uppercase tracking-tight transition active:scale-[0.99] ${
+                  playerState === "ready"
+                    ? "border-orange-500 bg-orange-500 text-black hover:bg-white"
+                    : "border-white bg-neutral-950 text-white"
+                }`}
+              >
+                {/* 1. Draining Background Bar (Betting Phase Only) */}
+                {gameState === "betting" && (
+                  <>
+                  <div
+                    className={`absolute inset-y-0 left-0 transition-all duration-300 ease-linear ${
+                      betPlaced ? "bg-emerald-500" : "bg-white"
+                    }`}
+                    style={!betPlaced ? { width: `${progressBar}%` } : { width: "100%" }}
+                  />
+                  <span 
+                      className={`relative z-10 ${
+                        !betPlaced ? "mix-blend-difference text-white" : ""
+                      }`}
+                    >
+                      {primaryLabel}
+                    </span>
+                  </>
+                )}
+                {gameState === "blast_off" && (
+                  <>
                     <div
                       className={`absolute inset-y-0 left-0 transition-all duration-300 ease-linear ${
-                        betPlaced ? "bg-emerald-500" : "bg-white"
+                        cashedOut ? "bg-emerald-500" : "bg-white"
                       }`}
-                      style={!betPlaced ? { width: `${progressBar}%` } : { width: "100%" }}
+                      style={{ width: "100%" }}
                     />
                     <span 
-                        className={`relative z-10 ${
-                          !betPlaced ? "mix-blend-difference text-white" : ""
-                        }`}
-                      >
-                        {primaryLabel}
-                      </span>
-                    </>
-                  )}
-                  {gameState === "blast_off" && (
-                    <>
-                      <div
-                        className={`absolute inset-y-0 left-0 transition-all duration-300 ease-linear ${
-                          cashedOut ? "bg-emerald-500" : "bg-white"
-                        }`}
-                        style={{ width: "100%" }}
-                      />
-                      <span 
-                        className={`relative z-10 ${
-                          !cashedOut ? "mix-blend-difference text-white" : ""
-                        }`}
-                      >
-                        {primaryLabel}
-                      </span>
-                    </>
-                  )}
-                  {gameState !== "betting" && gameState !== "blast_off" && (
-                      <span 
-                        className={`relative z-10 ${
-                          !betPlaced ? "mix-blend-difference text-white" : ""
-                        }`}
-                      >
-                        {primaryLabel}
-                  </span>   
-                  )}
-                  
-                  {/* 2. Text Layer with Inverted Contrast Trick */}
-                  
-                </button>
-              )}
+                      className={`relative z-10 ${
+                        !cashedOut ? "mix-blend-difference text-white" : ""
+                      }`}
+                    >
+                      {primaryLabel}
+                    </span>
+                  </>
+                )}
+                {gameState !== "betting" && gameState !== "blast_off" && (
+                    <span 
+                      className={`relative z-10 ${
+                        !betPlaced ? "mix-blend-difference text-white" : ""
+                      }`}
+                    >
+                      {primaryLabel}
+                </span>   
+                )}
+              </button>
             </div>
           </section>
         </div>

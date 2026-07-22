@@ -29,8 +29,9 @@ export function CrashOutProvider({ children }) {
   const [myBalance, setBalance] = useState(0);
   const [myBet, setMyBet] = useState(null);
   const [currentRound, setCurrentRound] = useState(0);
-  
-  const { serverTimeOffset, warning } = usePartyContext(); 
+  const [playerState, setPlayerState] = useState("waiting");
+  const [players, setPlayers] = useState({});
+  const { serverTimeOffset, warning, players: lobbyPlayers, username } = usePartyContext(); 
 
   // Refs for stable calculation values inside continuous interval loops
   const serverTimeOffsetRef = useRef(serverTimeOffset);
@@ -104,6 +105,106 @@ export function CrashOutProvider({ children }) {
   }, [gameState, bettingTimestamp, bettingDuration, getServerTime]);
 
   // 3. Multiplier Blast-Off Loop
+   useEffect(() => {
+  const currentName = username || "You";
+  const roster = lobbyPlayers.length
+    ? Array.from(new Set([...lobbyPlayers, currentName]))
+    : [currentName];
+
+  setPlayers((prevPlayers) => {
+    return roster.reduce((acc, name) => {
+      const isYou = name === currentName;
+
+      // Preserve any local changes (like score updates) if player already exists
+      const existingPlayer = prevPlayers[name];
+
+      let playerData = existingPlayer || {
+        id: name,
+        avatar: name.slice(0, 2).toUpperCase(),
+        state: "waiting",
+        score: "NA",
+        isYou,
+      };
+
+      if (isYou) {
+        if (playerState === "ready") {
+          playerData = { ...playerData, state: "ready", bet: "NA" };
+        } else if (playerState === "cashed") {
+          playerData = {
+            ...playerData,
+            state: "waiting",
+            cashout: "NA",
+            score: "NA",
+            mutiplier: "NA",
+            bet: "NA",
+          };
+        }
+      }
+
+      acc[name] = playerData;
+      return acc;
+    }, {});
+  });
+}, [lobbyPlayers, playerState, username]);
+
+const updateScore = (playerId, newScore) => {
+  setPlayers((prev) => ({
+    ...prev,
+    [playerId]: {
+      ...prev[playerId],
+      score: newScore, // Overwrites ONLY score; keeps avatar, state, etc.
+    },
+  }));
+};
+
+const updateMultiplier = (playerId, newMultiplier) => {
+  setPlayers((prev) => ({
+    ...prev,
+    [playerId]: {
+      ...prev[playerId],
+      multiplier: newMultiplier, // Overwrites ONLY score; keeps avatar, state, etc.
+    },
+  }));
+};
+
+const updateState = (playerId, newState) => {
+  setPlayers((prev) => ({
+    ...prev,
+    [playerId]: {
+      ...prev[playerId],
+      state: newState, // Overwrites ONLY score; keeps avatar, state, etc.
+    },
+  }));
+};
+
+const setAllPlayersState = (newState) => {
+  setPlayers((prev) =>
+    Object.keys(prev).reduce((acc, playerId) => {
+      acc[playerId] = {
+        ...prev[playerId],
+        state: newState, // Overwrites 'state' for every player
+      };
+      return acc;
+    }, {})
+  );
+};
+
+const checkWhoCrashed = () => {
+  setPlayers((prev) =>
+    Object.keys(prev).reduce((acc, playerId) => {
+      const player = prev[playerId];
+
+      acc[playerId] =
+        player.state === "bet_placed"
+          ? { ...player, state: "crashed" }
+          : player; // Leaves the player untouched if state isn't "bet_placed"
+
+      return acc;
+    }, {})
+  );
+};
+
+
   useEffect(() => {
     if (gameState !== "blast_off" || !serverStartTime) return;
 
@@ -113,6 +214,7 @@ export function CrashOutProvider({ children }) {
         setMultiplier(0);
         setHasCrashed(true);
         setGameState("crashed");
+        checkWhoCrashed()
       } else {
         setMultiplier(currentMultiplier);
       }
@@ -121,41 +223,66 @@ export function CrashOutProvider({ children }) {
     return () => clearInterval(interval);
   }, [gameState, serverStartTime, getMultiplierAtTime]);
 
+ 
+
+const updateBet = (playerId, newBet) => {
+  setPlayers((prev) => ({
+    ...prev,
+    [playerId]: {
+      ...prev[playerId],
+      bet: newBet, // Overwrites ONLY score; keeps avatar, state, etc.
+    },
+  }));
+};
+
+  
   // =========================================================================
   // Socket Handlers
   // =========================================================================
   useSocketEvent("game_update", (data) => {
     console.log(data)
+    const payload = data.payload
     if (data.type === "START_GAME") {
-      setBalance(data.payload.starting_score);
+      setBalance(payload.starting_score);
     } else if (data.type === "PHASE_CHANGE") {
-      const phase = data.payload.phase;
+      const phase = payload.phase;
+      
       setGameState(phase);
       if (phase === "betting") {
         console.log(data)
         setBetAmount(0);
-        setCurrentRound(data.payload.current_round)
+        setCurrentRound(payload.current_round)
+        setAllPlayersState("waiting")
         console.log("Current round", currentRound)
         setHasCrashed(false);
         setBetPlaced(false);
         setCashedOut(false);
         setProgressBar(100);
         setOverlayOpacity(1);
-        setBettingDuration(data.payload.seconds);
-        setBettingTimestamp(data.payload.timestamp);
+        setBettingDuration(payload.seconds);
+        setBettingTimestamp(payload.timestamp);
       } else if (phase === "playing") {
-        setServerStartTime(data.payload.start_time);
-        setMultiplierInterval(data.payload.step_inverval);
-        setMultiplierSeed(data.payload.seed);
+        setServerStartTime(payload.start_time);
+        setMultiplierInterval(payload.step_inverval);
+        setMultiplierSeed(payload.seed);
       }
     } else if (data.type === "END_GAME"){
       navigate("/room")
     }
-  });
+    else if (data.type === "PLAYER_ACTION"){
+      if(payload.action === "place_bet"){
+        updateState(payload.player, "bet_placed")
+        updateBet(payload.player, payload.details.bet)
+      }
+      if(payload.action === "cash_out"){
+        updateState(payload.player, "cashed_out")
+        updateMultiplier(payload.player,payload.details.multiplier)
+        updateScore(payload.player, payload.details.score)
+      }
+      console.log(`\nNew Player Info:`, players[payload.player])
 
-  // =========================================================================
-  // User Actions
-  // =========================================================================
+    }
+  });
   const handlePlaceBet = useCallback(async () => {
     if (isSubmitting || betAmount === 0) return;
     setIsSubmitting(true);
@@ -227,6 +354,9 @@ export function CrashOutProvider({ children }) {
     cashedOut,
     gain,
     currentRound,
+    playerState,
+    setPlayerState,
+    players,
   }), [
     gameState,
     multiplier,
@@ -246,6 +376,8 @@ export function CrashOutProvider({ children }) {
     cashedOut,
     gain,
     currentRound,
+    playerState,
+    players
   ]);
 
   return (
