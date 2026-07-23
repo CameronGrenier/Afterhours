@@ -226,6 +226,7 @@ class CrashOutEngine:
                     'payload': {
                         'phase': 'player_punishment',
                         'name': this_player.name,
+                        'score': this_player.score
                     }
                 }, room=self.room)
                 await asyncio.sleep(1)

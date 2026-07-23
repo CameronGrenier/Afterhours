@@ -31,7 +31,7 @@ export function CrashOutProvider({ children }) {
   const [currentRound, setCurrentRound] = useState(0);
   const [playerState, setPlayerState] = useState("waiting");
   const [players, setPlayers] = useState({});
-  const { serverTimeOffset, warning, players: lobbyPlayers, username } = usePartyContext(); 
+  const { serverTimeOffset, warning, info, players: lobbyPlayers, username } = usePartyContext(); 
 
   // Refs for stable calculation values inside continuous interval loops
   const serverTimeOffsetRef = useRef(serverTimeOffset);
@@ -106,7 +106,7 @@ export function CrashOutProvider({ children }) {
 
   // 3. Multiplier Blast-Off Loop
    useEffect(() => {
-  const currentName = username || "You";
+  const currentName = username;
   const roster = lobbyPlayers.length
     ? Array.from(new Set([...lobbyPlayers, currentName]))
     : [currentName];
@@ -265,7 +265,7 @@ const updateBet = (playerId, newBet) => {
   // Socket Handlers
   // =========================================================================
   useSocketEvent("game_update", (data) => {
-    console.log(data)
+    //console.log(data)
     const payload = data.payload
     if (data.type === "START_GAME") {
       setBalance(payload.starting_score);
@@ -275,11 +275,11 @@ const updateBet = (playerId, newBet) => {
       
       setGameState(phase);
       if (phase === "betting") {
-        console.log(data)
+        //console.log(data)
         setBetAmount(0);
         setCurrentRound(payload.current_round)
         setAllPlayersState("waiting")
-        console.log("Current round", currentRound)
+        //console.log("Current round", currentRound)
         setHasCrashed(false);
         setBetPlaced(false);
         setCashedOut(false);
@@ -292,6 +292,13 @@ const updateBet = (playerId, newBet) => {
         setServerStartTime(payload.start_time);
         setMultiplierInterval(payload.step_inverval);
         setMultiplierSeed(payload.seed);
+      }
+      else if (phase === "player_punishment") {
+        if(payload.name === username){
+          setBalance(payload.score)
+          info("The house takes pitty, +10$")
+        } 
+        updateScore(payload.name, payload.score)
       }
     } else if (data.type === "END_GAME"){
       navigate("/room")
@@ -306,7 +313,7 @@ const updateBet = (playerId, newBet) => {
         updateMultiplier(payload.player,payload.details.multiplier)
         updateScore(payload.player, payload.details.score)
       }
-      console.log(`\nNew Player Info:`, players[payload.player])
+      //console.log(`\nNew Player Info:`, players[payload.player])
 
     }
   });
@@ -336,7 +343,7 @@ const updateBet = (playerId, newBet) => {
 
     try {
       const res = await crashOut(multiplier);
-      console.log(res)
+      //console.log(res)
       if (res.status === "success") {
         setCashedOut(true);
         setBalance(res.data.score);
@@ -384,6 +391,7 @@ const updateBet = (playerId, newBet) => {
     playerState,
     setPlayerState,
     players,
+    setBetPlaced,
   }), [
     gameState,
     multiplier,

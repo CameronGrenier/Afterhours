@@ -180,12 +180,12 @@ function ToastItem({ toast, onDismiss }) {
     <div
       role="status"
       aria-live={ariaLive}
-      className={`pointer-events-auto flex max-w-[90vw] items-center gap-3 rounded-lg border-2 ${border} bg-black/50 px-4 py-2.5 font-sans text-sm text-white shadow-lg backdrop-blur-sm transition-all duration-300 ease-out motion-reduce:transition-none md:text-base ${
+      className={`pointer-events-auto flex w-full max-w-* items-center gap-3 rounded-lg border-2 ${border} bg-black/50 px-4 py-2.5 font-sans text-sm text-white shadow-lg backdrop-blur-sm transition-all duration-300 ease-out motion-reduce:transition-none md:text-base ${
         visible ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0"
       }`}
     >
       <Icon size={20} className={`shrink-0 ${iconColor}`} aria-hidden="true" />
-      <span className="min-w-0">{message}</span>
+      <span className="flex-1 min-w-0">{message}</span>
       <button
         type="button"
         onClick={requestDismiss}

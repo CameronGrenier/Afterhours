@@ -12,11 +12,13 @@ export default function CrashOutPage(){
     const {gameState} = useCrashOutContext();
     return(
         <main>
-            <SettingsPanel/>
-            <MembersPanel/>
-            <header className='w-full flex justify-center items-center z-[3]'>
-            <h1 className='text-3xl lg:text-4xl font-display uppercase text-white'>afterhours</h1>
-            </header>
+            <div className="hidden md:block">
+                <SettingsPanel/>
+                <MembersPanel/>
+                <header className='w-full flex justify-center items-center z-[3]'>
+                <h1 className='text-3xl lg:text-4xl font-display uppercase text-white'>afterhours</h1>
+                </header>
+            </div>
             <CrashOutGame/>
         </main>
     )
