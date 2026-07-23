@@ -82,9 +82,9 @@ export default function CrashOutDemo() {
           ? `Cash out · ${money(Math.round(multiplier * betAmount))}`
           : gameState === "blast_off" ? `Cashed Out @ ${gain.toFixed(2)}x` :`Market is Closed`;
   return (
-    <main className="pb-8 sm:pb-10">
+    <main className="relative h-full bg-black font-sans text-white">
       <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,transparent_0,transparent_18%,#ff5b19_18.2%,transparent_18.5%),radial-gradient(circle_at_85%_30%,transparent_0,transparent_16%,#fff_16.2%,transparent_16.4%)]" />
-      <div className="relative z-10 mx-auto flex min-h-dvh max-w-[1600px] flex-col p-4 md:p-6">
+      <div className="relative z-10 mx-auto h-full flex max-w-[1600px] flex-col p-4 md:p-6">
         <header className="flex items-center justify-between border-b border-white/20 pb-4">
           {/* Compact Balance Badge */}
           <div>
