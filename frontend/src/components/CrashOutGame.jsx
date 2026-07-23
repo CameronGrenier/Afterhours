@@ -82,20 +82,20 @@ export default function CrashOutDemo() {
           ? `Cash out · ${money(Math.round(multiplier * betAmount))}`
           : gameState === "blast_off" ? `Cashed Out @ ${gain.toFixed(2)}x` :`Market is Closed`;
   return (
-    <main className="relative h-full bg-black font-sans text-white">
-      <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,transparent_0,transparent_18%,#ff5b19_18.2%,transparent_18.5%),radial-gradient(circle_at_85%_30%,transparent_0,transparent_16%,#fff_16.2%,transparent_16.4%)]" />
-      <div className="relative z-10 mx-auto h-full flex max-w-[1600px] flex-col p-4 md:p-6 pb-4 sm:pb-6">
+    <main className="relative h-full w-full font-sans text-white">
+      <div className="pointer-events-none absolute inset-0 opacity-20" />
+      <div className="relative z-10 mx-auto h-full flex flex-col p-4">
         <header className="flex items-center justify-between border-b border-white/20 pb-4">
           {/* Compact Balance Badge */}
           <div>
             <span>{`Round ${currentRound}`}</span>
-            <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-1">
+            <div className="flex items-center gap-2 rounded-sm border border-emerald-500/30 bg-emerald-900/70 px-3 py-1">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-300/70">Balance</span>
               <span className="text-base font-bold tabular-nums text-emerald-400">{money(myBalance)}</span>
             </div>
           </div>
           <div className="flex flex-col items-center gap-3 text-sm font-bold uppercase tracking-wider">
-            <span className="inline-flex items-center gap-2 rounded-full border border-orange-500 px-3 py-1 text-orange-500">
+            <span className="inline-flex items-center gap-2 rounded-sm border bg-black border-orange-500 px-3 py-1 text-orange-500">
               <span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" /> {gameState}
             </span>
             
