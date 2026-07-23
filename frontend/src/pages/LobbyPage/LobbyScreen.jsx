@@ -37,7 +37,7 @@ export default function LobbyScreen({
 }) {
 
   const navigate = useNavigate();
-  const { sid, info, partyCode, username, players, isHost, setIsHost, setScreen, handleKickPlayer, leaderboard} = usePartyContext();
+  const { sid, info, partyCode, username, players, isHost, setIsHost, setScreen, handleKickPlayer, leaderboard, setLeaderboard} = usePartyContext();
   const { width, height } = dimensions;
 
   /**
@@ -48,10 +48,17 @@ export default function LobbyScreen({
   }
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   useEffect(() => {
+    console.log("Leaderboard: ", leaderboard)
     if (leaderboard && leaderboard.length > 0) {
       setShowLeaderboard(true);
     }
   }, [leaderboard]);
+
+  function handleCloseLeaderboard(){
+    setLeaderboard([])
+    setShowLeaderboard(false)
+
+  }
 
   /**
    * Leaves the current room and returns to the join screen. Notifies the server
@@ -60,7 +67,7 @@ export default function LobbyScreen({
   function handleLeave() {
     setIsHost(false);
     leaveRoom(sid, partyCode, username);
-    setScreen("join");
+    navigate("/")
   }
 
 

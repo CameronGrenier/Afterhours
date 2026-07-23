@@ -61,7 +61,7 @@ class CrashOutEngine:
          :param sio: The AsyncServer socket instance passed down from RoomManager.
          :param room: The unique string room code used for broadcasting data fields.
          """
-        self.final_round = 1 #can easily make this customizable by the host
+        self.final_round = 5 #can easily make this customizable by the host
         self.current_round = 0
         self.game_task = None
         self.phase = Phases.BETTING #Start in the betting phase of the game
@@ -105,7 +105,13 @@ class CrashOutEngine:
             sorted_players = sorted(
                 self.active_players.values(),
                 key=lambda p: p.score,
+                reverse=True
              )
+            # print("--- LEADERBOARD DEBUG ---")
+            # for p in sorted_players:
+            #     player_name = getattr(p, 'name')
+            #     print(f"Player: {player_name} | Score: {p.score}")
+            # print("-------------------------")
             leaderboard = [p.name for p in sorted_players]
             await self.sio.emit('game_update', {
                 'type': 'END_GAME',
