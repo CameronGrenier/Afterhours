@@ -84,7 +84,7 @@ export default function CrashOutDemo() {
   return (
     <main className="relative h-full bg-black font-sans text-white">
       <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,transparent_0,transparent_18%,#ff5b19_18.2%,transparent_18.5%),radial-gradient(circle_at_85%_30%,transparent_0,transparent_16%,#fff_16.2%,transparent_16.4%)]" />
-      <div className="relative z-10 mx-auto h-full flex max-w-[1600px] flex-col p-4 md:p-6">
+      <div className="relative z-10 mx-auto h-full flex max-w-[1600px] flex-col p-4 md:p-6 pb-4 sm:pb-6">
         <header className="flex items-center justify-between border-b border-white/20 pb-4">
           {/* Compact Balance Badge */}
           <div>
@@ -102,7 +102,7 @@ export default function CrashOutDemo() {
           </div>
       </header>
 
-        <div className="grid flex-1 gap-4 py-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <div className="grid flex-1 min-h-0 gap-4 py-4 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="order-2 border border-white/20 bg-black/85 lg:order-1">
             <div className="p-2 sm:p-3">
   <div className="flex items-center justify-between px-1 pb-2">
@@ -154,9 +154,9 @@ export default function CrashOutDemo() {
 </div>
           </aside>
 
-          <section className="order-1 flex min-w-0 flex-col gap-4 lg:order-2">
-            <div className="relative min-h-[360px] flex-1 overflow-hidden border border-white/20 bg-[#090909] p- md:min-h-[480px] md:p-8">
-              <div className="relative flex-1 min-h-[280px] sm:min-h-0 sm:h-full w-full flex flex-col">
+          <section className="order-1 flex min-w-0 min-h-0 flex-col gap-4 lg:order-2">
+            <div className="relative flex flex-col flex-1 min-h-0 overflow-hidden border border-white/20 bg-[#090909] p-2 md:p-8">
+              <div className="relative flex-1 min-h-0 w-full flex flex-col">
                   <RocketMultiplierGraph
                     multiplier={multiplier}
                     running={gameState === "blast_off"}
@@ -274,7 +274,7 @@ export default function CrashOutDemo() {
                     gameState === "betting" && !betPlaced ? handlePlaceBet : 
                     gameState === "blast_off" && !cashedOut ? handleCrashOut : undefined
                   }
-                  className={`relative flex h-full min-h-[84px] w-full max-w-full min-w-0 items-center justify-center overflow-hidden border-2 px-1 text-center text-xs font-bold uppercase tracking-tight transition active:scale-[0.99] sm:px-4 sm:text-lg md:min-h-28 md:text-[clamp(1.1rem,2vw,2.2rem)] ${
+                  className={`relative flex h-full min-h-0 w-full max-w-full min-w-0 items-center justify-center overflow-hidden border-2 px-1 text-center text-xs font-bold uppercase tracking-tight transition active:scale-[0.99] sm:px-4 sm:text-lg md:text-[clamp(1.1rem,2vw,2.2rem)] ${
                     playerState === "ready"
                       ? "border-orange-500 bg-orange-500 text-black hover:bg-white"
                       : "border-white bg-neutral-950 text-white"
@@ -318,7 +318,6 @@ export default function CrashOutDemo() {
               </div>
           </section>
         </div>
-        <div className="h-[1vh] sm:h-[4vh] w-full pointer-events-none" aria-hidden="true"></div>
       </div>
     </main>
   );

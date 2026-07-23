@@ -3,8 +3,6 @@ import { Rocket } from "lucide-react";
 import { useCrashOutContext } from "@/hooks/useCrashoutContext";
 
 const CHART = {
-  width: 500,
-  height: 500,
   left: 72,
   right: 30,
   top: 18,
@@ -20,6 +18,30 @@ export default function RocketMultiplierGraph({
   const [points, setPoints] = useState([{ time: 0, value: multiplier }]);
   const startedAt = useRef(0);
   const { gameState } = useCrashOutContext();
+
+  // Measure the actual rendered size so the SVG coordinate system matches the container
+  const rootRef = useRef(null);
+  const [size, setSize] = useState({ width: 500, height: 500 });
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      // Ignore transient collapsed measurements; keep the last good size.
+      if (width < 2 || height < 2) return;
+      setSize({
+        width: Math.round(width),
+        height: Math.round(height),
+      });
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Reset graph history on resetKey change
   useEffect(() => {
@@ -48,8 +70,8 @@ export default function RocketMultiplierGraph({
   const targetXProgress = 0.9 * (1 - Math.exp(-lastTime / 4));
   const xWindow = lastTime > 0 ? lastTime / targetXProgress : 4 / 0.9;
   const yMax = 3 + multiplier * 1.22;
-  const plotWidth = CHART.width - CHART.left - CHART.right;
-  const plotHeight = CHART.height - CHART.top - CHART.bottom;
+  const plotWidth = size.width - CHART.left - CHART.right;
+  const plotHeight = size.height - CHART.top - CHART.bottom;
 
   const xOf = (time) => CHART.left + (time / xWindow) * plotWidth;
   const yOf = (val) => CHART.top + plotHeight - (val / yMax) * plotHeight;
@@ -63,6 +85,7 @@ export default function RocketMultiplierGraph({
     .join(" ");
 
   const area = `${line} L${xOf(lastTime)},${CHART.top + plotHeight} L${CHART.left},${CHART.top + plotHeight} Z`;
+  const baselineY = CHART.top + plotHeight;
 
   // Grid Ticks
   const yTicks = Array.from(
@@ -74,9 +97,9 @@ export default function RocketMultiplierGraph({
     (_, index) => (xWindow / 6) * index,
   );
 
-  // Rocket position
-  const rocketLeft = (xOf(lastTime) / CHART.width) * 100;
-  const rocketTop = (yOf(multiplier) / CHART.height) * 100;
+  // Rocket position (in real pixels, matching the SVG coordinate system)
+  const rocketLeft = xOf(lastTime);
+  const rocketTop = yOf(multiplier);
 
   // Dynamic Rocket Rotation based on recent rate of change (dy / dt)
   const prevPoint = points.at(-2) || { time: 0, value: multiplier };
@@ -91,7 +114,8 @@ export default function RocketMultiplierGraph({
 
   return (
     <section
-      className={`relative h-full w-full min-h-[430px] overflow-hidden border border-white/20 bg-[#080808] text-white ${className}`}
+      ref={rootRef}
+      className={`relative h-full w-full min-h-0 overflow-hidden border border-white/20 bg-[#080808] text-white ${className}`}
     >
       <div className="pointer-events-none absolute left-1/2 top-5 z-20 -translate-x-1/2 text-center md:top-7">
         <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-orange-500">
@@ -118,7 +142,7 @@ export default function RocketMultiplierGraph({
       </div>
 
       <svg
-        viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+        viewBox={`0 0 ${size.width} ${size.height}`}
         preserveAspectRatio="none"
         className="absolute inset-0 h-full w-full"
         aria-label={`Live multiplier graph, current value ${multiplier.toFixed(2)} times`}
@@ -129,7 +153,7 @@ export default function RocketMultiplierGraph({
             <g key={index}>
               <line
                 x1={CHART.left}
-                x2={CHART.width - CHART.right}
+                x2={size.width - CHART.right}
                 y1={y}
                 y2={y}
                 stroke="rgba(255,255,255,.13)"
@@ -156,12 +180,12 @@ export default function RocketMultiplierGraph({
                 x1={x}
                 x2={x}
                 y1={CHART.top}
-                y2={CHART.top + plotHeight}
+                y2={baselineY}
                 stroke="rgba(255,255,255,.07)"
               />
               <text
                 x={x}
-                y={CHART.height - 17}
+                y={size.height - 17}
                 textAnchor="middle"
                 fill="rgba(255,255,255,.35)"
                 fontSize="13"
@@ -187,7 +211,7 @@ export default function RocketMultiplierGraph({
 
       <div
         className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2"
-        style={{ left: `${rocketLeft}%`, top: `${rocketTop}%` }}
+        style={{ left: `${rocketLeft}px`, top: `${rocketTop}px` }}
       >
         <span className="absolute right-9 top-1/2 h-1 w-12 -translate-y-1/2 bg-gradient-to-l from-orange-500 to-transparent" />
         <Rocket
