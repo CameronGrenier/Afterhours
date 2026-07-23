@@ -41,7 +41,7 @@ Afterhours/
 
 ## Current Status
 
-Milestone 02
+Milestone 03
 
 ## Setup Instructions
 
