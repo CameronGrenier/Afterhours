@@ -31,7 +31,7 @@ export default function SettingsPanel() {
         />
       )}
 
-      <PartyCode isCompact={true} partyCode={partyCode} position="bl" />
+      {partyCode && <PartyCode isCompact={true} partyCode={partyCode} position="bl" />}
     </Panel>
   );
 }
