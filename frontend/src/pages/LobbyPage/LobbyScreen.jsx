@@ -48,7 +48,6 @@ export default function LobbyScreen({
   }
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   useEffect(() => {
-    console.log("Leaderboard: ", leaderboard)
     if (leaderboard && leaderboard.length > 0) {
       setShowLeaderboard(true);
     }

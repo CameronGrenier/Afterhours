@@ -54,7 +54,6 @@ export function PartyProvider({ children }) {
   });
 
   useSocketEvent("lobby_update", (data) => {
-    console.log("lobby Update: ", data.game);
     //Later on add slang and other games here
     navigate(data.game === "Crash Out" ? "/crashout" : "/room");
   });

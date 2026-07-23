@@ -301,7 +301,6 @@ const updateBet = (playerId, newBet) => {
         updateScore(payload.name, payload.score)
       }
     } else if (data.type === "END_GAME"){
-      console.log(data, data.payload.leaderboard)
       setLeaderboard(data.payload.leaderboard)
       navigate("/lobby")
     }
