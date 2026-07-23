@@ -6,6 +6,7 @@ import "./index.css";
 import App from "./pages/home/App.jsx";
 import TestPage from "./pages/test/TestPage.jsx";
 import RoomPage from "./pages/room/RoomPage.jsx";
+import LobbyPage from "./pages/LobbyPage/LobbyPage.jsx";
 import CrashOutPage from "./pages/crashOut/CrashOut.jsx";
 
 import { PartyProvider } from "./components/PartyProvider.jsx";
@@ -34,6 +35,8 @@ createRoot(document.getElementById("root")).render(
             <Routes>
               {/* Landing Page */}
               <Route path="/" element={<App />} />
+              {/* Lobby Page */}
+              <Route path="/lobby" element={<LobbyPage/>} />
               {/* Room Page */}
               <Route path="/room" element={<RoomPage />} />
               {/* CrashOut Game Page */}

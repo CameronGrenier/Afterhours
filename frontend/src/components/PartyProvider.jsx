@@ -20,6 +20,7 @@ export function PartyProvider({ children }) {
   // State Management
   // =========================================================================
   const [sid, setSid] = useState(null); // Socket ID
+  const [ledaerboard, setLeaderboard] = useState([]); // Socket ID
   const [isHost, setIsHost] = useState(false); // Flag if the user is the host of the room
   const navigate = useNavigate();
   const [rotateDialogDismissed, setRotateDialogDismissed] = useState(() => { // Flag to track if the user has seen and dismissed a que to rotate out of landscape mobile
@@ -146,6 +147,8 @@ export function PartyProvider({ children }) {
     handleKickPlayer,
     setServerTimeOffset,
     serverTimeOffset,
+    ledaerboard,
+    setLeaderboard,
   };
 
   return (

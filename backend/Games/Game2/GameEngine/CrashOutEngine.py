@@ -61,7 +61,7 @@ class CrashOutEngine:
          :param sio: The AsyncServer socket instance passed down from RoomManager.
          :param room: The unique string room code used for broadcasting data fields.
          """
-        self.final_round = 5 #can easily make this customizable by the host
+        self.final_round = 1 #can easily make this customizable by the host
         self.current_round = 0
         self.game_task = None
         self.phase = Phases.BETTING #Start in the betting phase of the game
@@ -101,15 +101,23 @@ class CrashOutEngine:
         try:
             for i in range(self.final_round):
                 await self.start_betting()
+            print("Game over moving on")
+            sorted_players = sorted(
+                self.active_players.values(),
+                key=lambda p: p.score,
+             )
+            leaderboard = [p.name for p in sorted_players]
             await self.sio.emit('game_update', {
                 'type': 'END_GAME',
                 'payload': {
+                    'leaderboard':leaderboard
                 }
             }, room=self.room)
         except asyncio.CancelledError:
             print("Game has been canceled")
-        self.stop
         self.phase = Phases.DONE
+        self.stop
+
 
 
     async def handle_event(self, username:str, event_type:str, data: Dict[str, Any]):

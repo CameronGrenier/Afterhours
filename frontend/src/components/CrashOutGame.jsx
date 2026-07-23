@@ -318,7 +318,7 @@ export default function CrashOutDemo() {
               </div>
           </section>
         </div>
-        <div className="h-[0vh] sm:h-[2vh] w-full pointer-events-none" aria-hidden="true"></div>
+        <div className="h-[1vh] sm:h-[2vh] w-full pointer-events-none" aria-hidden="true"></div>
       </div>
     </main>
   );

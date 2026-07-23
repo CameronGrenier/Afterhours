@@ -31,7 +31,7 @@ export function CrashOutProvider({ children }) {
   const [currentRound, setCurrentRound] = useState(0);
   const [playerState, setPlayerState] = useState("waiting");
   const [players, setPlayers] = useState({});
-  const { serverTimeOffset, warning, info, players: lobbyPlayers, username } = usePartyContext(); 
+  const { serverTimeOffset, warning, info, players: lobbyPlayers, username, setLeaderboard } = usePartyContext(); 
 
   // Refs for stable calculation values inside continuous interval loops
   const serverTimeOffsetRef = useRef(serverTimeOffset);
@@ -301,7 +301,9 @@ const updateBet = (playerId, newBet) => {
         updateScore(payload.name, payload.score)
       }
     } else if (data.type === "END_GAME"){
-      navigate("/room")
+      console.log(data)
+      setLeaderboard(data.payload.leaderboard)
+      navigate("/lobby")
     }
     else if (data.type === "PLAYER_ACTION"){
       if(payload.action === "place_bet"){
