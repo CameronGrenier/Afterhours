@@ -229,7 +229,6 @@ export default function CrashOutDemo() {
           </div>
           <div className="flex flex-col items-center gap-3 text-sm font-bold uppercase tracking-wider">
             <span className="inline-flex items-center gap-2 rounded-sm border bg-black border-orange-500 px-3 py-1 text-orange-500">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" />{" "}
               {gameState}
             </span>
           </div>
@@ -307,14 +306,14 @@ export default function CrashOutDemo() {
                     >
                       <div className="flex flex-col items-center gap-4 text-center">
                         <div
-                          className={`flex items-center gap-2.5 rounded-full border ${config.badgeBorder} ${config.badgeBg} px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] ${config.badgeText} backdrop-blur-sm transition-colors duration-300`}
+                          className={`flex items-center gap-2.5 rounded-sm border ${config.badgeBorder} ${config.badgeBg} px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] ${config.badgeText} backdrop-blur-sm transition-colors duration-300`}
                         >
                           <span className="relative flex h-2.5 w-2.5">
                             <span
-                              className={`absolute inline-flex h-full w-full rounded-full ${config.dotColor} opacity-75 ${isLowTime ? "animate-ping" : "animate-pulse"}`}
+                              className={`absolute inline-flex h-full w-full rounded-sm ${config.dotColor} opacity-75 ${isLowTime ? "animate-ping" : "animate-pulse"}`}
                             ></span>
                             <span
-                              className={`relative inline-flex h-2.5 w-2.5 rounded-full ${config.dotColor}`}
+                              className={`relative inline-flex h-2.5 w-2.5 rounded-sm ${config.dotColor}`}
                             ></span>
                           </span>
                           {config.label}
