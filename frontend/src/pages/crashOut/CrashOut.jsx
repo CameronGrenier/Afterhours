@@ -11,13 +11,13 @@ import MembersPanel from "@/components/MembersPanel";
 export default function CrashOutPage(){
     const {gameState} = useCrashOutContext();
     return(
-        <main>
+        <div className='flex flex-col h-dvh overflow-hidden'>
             <SettingsPanel/>
             <MembersPanel/>
-            <header className='w-full flex justify-center items-center z-[3]'>
+            <header className='w-full flex justify-center items-center z-[3] py-[24px]'>
             <h1 className='text-3xl lg:text-4xl font-display uppercase text-white'>afterhours</h1>
             </header>
             <CrashOutGame/>
-        </main>
+        </div>
     )
 }
