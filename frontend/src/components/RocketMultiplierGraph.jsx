@@ -91,7 +91,7 @@ export default function RocketMultiplierGraph({
 
   return (
     <section
-      className={`relative h-full w-full min-h-[430px] overflow-hidden border border-white/20 bg-[#080808] text-white ${className}`}
+      className={`absolute inset-0 w-full h-full overflow-hidden border border-white/20 bg-[#080808] text-white ${className}`}
     >
       <div className="pointer-events-none absolute left-1/2 top-5 z-20 -translate-x-1/2 text-center md:top-7">
         <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-orange-500">

@@ -101,67 +101,72 @@ export default function CrashOutDemo() {
             
           </div>
       </header>
-
         <div className="grid flex-1 gap-4 py-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-          <aside className="order-2 border border-white/20 bg-black/85 lg:order-1">
-            <div className="p-2 sm:p-3">
-  <div className="flex items-center justify-between px-1 pb-2">
-    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">Players</p>
-    {/* Optional player count hint for mobile scrolling */}
-    <span className="text-[10px] font-mono text-white/30 lg:hidden">
-      {Object.values(players).length} total
-    </span>
-  </div>
+          <aside className="order-2 border border-white/20 bg-black/85 lg:order-1 lg:h-full lg:min-h-0 flex flex-col">
+  <div className="p-2 sm:p-3 flex flex-col lg:h-full min-h-0 flex-1">
+    
+    {/* Header (fixed at top) */}
+    <div className="flex items-center justify-between px-1 pb-2 shrink-0">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">Players</p>
+      <span className="text-[10px] font-mono text-white/30 lg:hidden">
+        {Object.values(players).length} total
+      </span>
+    </div>
 
-  {/* 2 columns on mobile with capped height & vertical scroll, 1 column & full height on desktop */}
-  <div className="grid grid-cols-2 gap-1.5 overflow-y-auto max-h-[210px] sm:max-h-[280px] lg:max-h-none lg:grid-cols-1 pr-1">
-    {Object.values(players).map((player) => (
-      <div
-        key={player.id}
-        className={`flex items-center gap-1.5 sm:gap-3 border p-2 sm:p-3 min-w-0 ${
-          player.isYou ? "border-orange-500 bg-orange-500/10" : "border-white/10"
-        }`}
-      >
-        <span
-          className={`grid h-8 w-8 sm:h-10 sm:w-10 shrink-0 place-items-center rounded-full text-xs sm:text-sm font-bold ${
-            player.state === "cashed_out"
-              ? "bg-emerald-500 text-white"
-              : player.state === "bet_placed"
-              ? "bg-emerald-500/50 text-white"
-              : player.state === "crashed"
-              ? "bg-red-500"
-              : "border-2 border-white/50 bg-white/10"
-          }`}
-        >
-          {player.avatar}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-xs sm:text-sm font-bold uppercase">{player.id}</span>
-          <PlayerState player={player} />
-        </span>
+    {/* 1. SCROLL WRAPPER: Handles overflow & bottom padding */}
+    <div className="overflow-y-auto flex-1 min-h-0 max-h-[210px] sm:max-h-[280px] lg:max-h-none pr-1 pb-4">
+      
+      {/* 2. GRID WRAPPER: Handles 2-col vs 1-col layout */}
+      <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-1">
+        {Object.values(players).map((player) => (
+          <div
+            key={player.id}
+            className={`flex items-center gap-1.5 sm:gap-3 border p-2 sm:p-3 min-w-0 ${
+              player.isYou ? "border-orange-500 bg-orange-500/10" : "border-white/10"
+            }`}
+          >
+            <span
+              className={`grid h-8 w-8 sm:h-10 sm:w-10 shrink-0 place-items-center rounded-full text-xs sm:text-sm font-bold ${
+                player.state === "cashed_out"
+                  ? "bg-emerald-500 text-white"
+                  : player.state === "bet_placed"
+                  ? "bg-emerald-500/50 text-white"
+                  : player.state === "crashed"
+                  ? "bg-red-500"
+                  : "border-2 border-white/50 bg-white/10"
+              }`}
+            >
+              {player.avatar}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-xs sm:text-sm font-bold uppercase">{player.id}</span>
+              <PlayerState player={player} />
+            </span>
 
-        {/* Right side: Score as Currency */}
-        <div className="ml-auto shrink-0 text-right font-mono text-xs sm:text-sm font-bold text-emerald-400">
-          {typeof player.score === "number"
-            ? `${money(player.score)}`
-            : player.score === "NA"
-            ? "$0.00"
-            : `$${player.score}`}
-        </div>
+            {/* Right side: Score as Currency */}
+            <div className="ml-auto shrink-0 text-right font-mono text-xs sm:text-sm font-bold text-emerald-400">
+              {typeof player.score === "number"
+                ? `${money(player.score)}`
+                : player.score === "NA"
+                ? "$0.00"
+                : `$${player.score}`}
+            </div>
+          </div>
+          
+        ))}
       </div>
-    ))}
+        <div className="h-10 md:h-0 lg:h-0 shrink-0" aria-hidden="true" />
+    </div>
   </div>
-</div>
-          </aside>
-
+</aside>
           <section className="order-1 flex min-w-0 flex-col gap-4 lg:order-2">
-            <div className="relative min-h-[360px] flex-1 overflow-hidden border border-white/20 bg-[#090909] p- md:min-h-[480px] md:p-8">
-              <div className="relative flex-1 min-h-[280px] sm:min-h-0 sm:h-full w-full flex flex-col">
+            <div className="relative min-h-[160px] flex-1 overflow-hidden border border-white/20 bg-[#090909] p- md:min-h-[180px] md:p-8">
+              <div className={`absolute inset-0 w-full `}>
                   <RocketMultiplierGraph
                     multiplier={multiplier}
                     running={gameState === "blast_off"}
                   />
-              </div>
+        </div>
   {isWaitingToLaunch && (() => {
   const isBetting = gameState === "betting";
   const isLowTime = isBetting && countdown <= 3.0;
@@ -318,7 +323,7 @@ export default function CrashOutDemo() {
               </div>
           </section>
         </div>
-        <div className="h-[1vh] sm:h-[4vh] w-full pointer-events-none" aria-hidden="true"></div>
+        <div className="h-[1vh] sm:h-[2vh] w-full pointer-events-none" aria-hidden="true"></div>
       </div>
     </main>
   );
