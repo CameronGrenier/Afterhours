@@ -101,15 +101,29 @@ class CrashOutEngine:
         try:
             for i in range(self.final_round):
                 await self.start_betting()
+            print("Game over moving on")
+            sorted_players = sorted(
+                self.active_players.values(),
+                key=lambda p: p.score,
+                reverse=True
+             )
+            # print("--- LEADERBOARD DEBUG ---")
+            # for p in sorted_players:
+            #     player_name = getattr(p, 'name')
+            #     print(f"Player: {player_name} | Score: {p.score}")
+            # print("-------------------------")
+            leaderboard = [p.name for p in sorted_players]
             await self.sio.emit('game_update', {
                 'type': 'END_GAME',
                 'payload': {
+                    'leaderboard':leaderboard
                 }
             }, room=self.room)
         except asyncio.CancelledError:
             print("Game has been canceled")
-        self.stop
         self.phase = Phases.DONE
+        self.stop
+
 
 
     async def handle_event(self, username:str, event_type:str, data: Dict[str, Any]):
@@ -226,6 +240,7 @@ class CrashOutEngine:
                     'payload': {
                         'phase': 'player_punishment',
                         'name': this_player.name,
+                        'score': this_player.score
                     }
                 }, room=self.room)
                 await asyncio.sleep(1)

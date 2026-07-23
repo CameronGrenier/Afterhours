@@ -3,11 +3,11 @@ import { Rocket } from "lucide-react";
 import { useCrashOutContext } from "@/hooks/useCrashoutContext";
 
 const CHART = {
-  width: 1000,
+  width: 500,
   height: 500,
   left: 72,
   right: 30,
-  top: 28,
+  top: 18,
   bottom: 48,
 };
 
@@ -98,7 +98,7 @@ export default function RocketMultiplierGraph({
           {running ? "Flight in progress" : "Waiting for launch"}
         </p>
         <p
-          className={`font-display text-[clamp(5rem,14vw,12rem)] leading-none tracking-[-0.06em] tabular-nums transition-colors duration-300 ${
+          className={`font-display text-[clamp(2.5rem,13vw,12rem)] leading-none tracking-[-0.06em] tabular-nums transition-colors duration-300 ${
             gameState === "crashed" || gameState === "update_score"
               ? "text-red-500 drop-shadow-[0_0_35px_rgba(239,68,68,0.35)]"
               : "text-white"

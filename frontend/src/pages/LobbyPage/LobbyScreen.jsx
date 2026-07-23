@@ -1,11 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Undo2, Users } from "lucide-react";
-
+import { Undo2, Trophy, Crown, X, Medal } from "lucide-react";
 import { leaveRoom } from "@/api/room.js"
-
 import { usePartyContext } from "@/hooks/usePartyContext.js";
-
 import PartyCode from "@/components/PartyCode";
 import Button from "@/components/Button";
 import MembersPanel from "../../components/MembersPanel";
@@ -40,7 +37,7 @@ export default function LobbyScreen({
 }) {
 
   const navigate = useNavigate();
-  const { sid, info, partyCode, username, players, isHost, setIsHost, setScreen, handleKickPlayer} = usePartyContext();
+  const { sid, info, partyCode, username, players, isHost, setIsHost, setScreen, handleKickPlayer, leaderboard, setLeaderboard} = usePartyContext();
   const { width, height } = dimensions;
 
   /**
@@ -48,6 +45,18 @@ export default function LobbyScreen({
   */
   function handleStartRoom() {
     navigate("/room");
+  }
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  useEffect(() => {
+    if (leaderboard && leaderboard.length > 0) {
+      setShowLeaderboard(true);
+    }
+  }, [leaderboard]);
+
+  function handleCloseLeaderboard(){
+    setLeaderboard([])
+    setShowLeaderboard(false)
+
   }
 
   /**
@@ -57,7 +66,7 @@ export default function LobbyScreen({
   function handleLeave() {
     setIsHost(false);
     leaveRoom(sid, partyCode, username);
-    setScreen("join");
+    navigate("/")
   }
 
 
@@ -110,7 +119,88 @@ export default function LobbyScreen({
           </Button>
         </div>
       </div>
+      {showLeaderboard && leaderboard && leaderboard.length > 0 && (
+        <LeaderboardModal
+          leaderboard={leaderboard}
+          onClose={handleCloseLeaderboard}
+        />
+      )}
     </>
+  );
+}
+
+function LeaderboardModal({ leaderboard = [], onClose }) {
+  const first = leaderboard[0] || "";
+  const second = leaderboard[1] || "";
+  const third = leaderboard[2] || "";
+
+  return (
+    <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-6">
+        
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-full hover:bg-neutral-800 transition-colors"
+        >
+          <X size={20} />
+        </button>
+        <div className="flex flex-col items-center gap-1">
+          <div className="p-3 bg-yellow-500/10 text-yellow-400 rounded-2xl border border-yellow-500/20 mb-1">
+            <Trophy size={32} />
+          </div>
+          <h2 className="text-2xl font-bold font-display uppercase tracking-wide text-white">
+            Match Results
+          </h2>
+          <p className="text-xs text-neutral-400 uppercase tracking-widest font-semibold">
+            Leaderboard
+          </p>
+        </div>
+        <div className="w-full flex flex-col gap-3">
+          <div className="flex items-center gap-4 p-3.5 bg-gradient-to-r from-yellow-500/20 to-neutral-900 border border-yellow-500/40 rounded-2xl">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500 text-black font-bold font-display text-lg">
+              1
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-yellow-400 uppercase tracking-wider flex items-center gap-1">
+                <Crown size={12} /> Winner
+              </p>
+              <p className="text-lg font-bold text-white truncate font-display">
+                {first}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-3.5 bg-neutral-800/60 border border-neutral-700/50 rounded-2xl">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-300 text-black font-bold font-display text-lg">
+              2
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <Medal size={12} /> 2nd Place
+              </p>
+              <p className="text-base font-bold text-white truncate font-display">
+                {second}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-3.5 bg-neutral-800/40 border border-neutral-800 rounded-2xl">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-700/80 text-white font-bold font-display text-lg">
+              3
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider flex items-center gap-1">
+                <Medal size={12} /> 3rd Place
+              </p>
+              <p className="text-base font-bold text-white truncate font-display min-h-[1.5rem]">
+                {third}
+              </p>
+            </div>
+          </div>
+        </div>
+        <Button variant="dark" onClick={onClose}>
+          Continue
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -229,7 +319,6 @@ function spiralPositions(players, W, H, opts = {}) {
     // `transition-colors` above, that makes colors visibly drift on re-render.
     // For stable per-player colors, derive the hue from the name or memoize it.
     const hue = Math.random() * 360;
-
     return { player, x, y, rotationDeg, hue, fontSize };
   });
 }
