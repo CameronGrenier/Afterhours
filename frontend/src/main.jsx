@@ -13,6 +13,10 @@ import { PartyProvider } from "./components/PartyProvider.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
 import { CrashOutProvider } from "./components/CrashOutProvider.jsx";
 
+//slang stuff
+import SlangPage from "./pages/slang/SlangPage.jsx";
+import { SlangProvider } from "./components/SlangProvider.jsx";
+
 /**
  * Application Entry Point
  *
@@ -32,6 +36,9 @@ createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <PartyProvider>
           <CrashOutProvider>
+            <SlangProvider>
+              
+            
             <Routes>
               {/* Landing Page */}
               <Route path="/" element={<App />} />
@@ -41,9 +48,11 @@ createRoot(document.getElementById("root")).render(
               <Route path="/room" element={<RoomPage />} />
               {/* CrashOut Game Page */}
                 <Route path="/crashout" element={<CrashOutPage />} />
+                <Route path="/slang" element={<SlangPage />} />
               {/* Component Testing Page */}
               <Route path="/test" element={<TestPage />} />
             </Routes>
+            </SlangProvider>
           </CrashOutProvider>
         </PartyProvider>
       </BrowserRouter>
