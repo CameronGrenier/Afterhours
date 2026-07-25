@@ -205,6 +205,7 @@ From inside `Games/Game1/GameEngine/`, with MySQL running and the venv active:
 pytest test_slangengine.py test_word_bank.py -v
 ```
 
+<<<<<<< HEAD
 Expect `23 passed`. Both files can also be run separately.
 
 Tests run against `cp476_afterhours_test`, never your real database. If a run leaves the test database in a weird state, reset it:
@@ -216,6 +217,8 @@ mysql -u root -p cp476_afterhours_test < schema.sql
 
 MySQL does have to actually be running for any of this to work.
 
+=======
+>>>>>>> Slang-Back+Front
 ---
 
 ## Playtesting (actually playing a game)
