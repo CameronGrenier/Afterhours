@@ -258,7 +258,11 @@ class RoomService:
 
         status = await room.start_game()
         if status == "Error":
-            return {"status": "error", "message": "not enough players to start the selected game"}
+            selected_game = room.game.value if room.game != "Not selected" else "Crash Out"
+            return {
+                "status": "error",
+                "message": f"Not enough players to start {selected_game}.",
+            }
 
         return {"status": "success"}
 
@@ -282,6 +286,19 @@ class RoomService:
         )
 
         if success:
+            if _global_payload is not None:
+                await self.sio.emit(
+                    "game_update",
+                    {
+                        "type": "PLAYER_ACTION",
+                        "payload": {
+                            "player": verified_username,
+                            "action": request.event_type,
+                            "details": _global_payload,
+                        },
+                    },
+                    room=code,
+                )
             return {"status": "success", "message": message, "data": local_payload}
 
         return {"status": "error", "message": message}

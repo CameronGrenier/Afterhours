@@ -157,6 +157,22 @@ def test_start_game(client):
     assert room_service.active_rooms[code].active_engine is not None
 
 
+def test_slang_requires_two_players(client, client2):
+    code = host_a_room(client, "alice")
+    room = room_service.active_rooms[code]
+    room.set_game("Slang")
+
+    first_attempt = client.post("/start_game", json={"code": code})
+    assert first_attempt.json()["status"] == "error"
+    assert "not enough players" in first_attempt.json()["message"].lower()
+    assert room.active_engine is None
+
+    join_a_room(client2, code, "bob")
+    second_attempt = client.post("/start_game", json={"code": code})
+    assert second_attempt.json()["status"] == "success"
+    assert room.active_engine is not None
+
+
 def test_place_bet_over_http(client):
     code = host_a_room(client, "alice")
     client.post("/start_game", json={"code": code})

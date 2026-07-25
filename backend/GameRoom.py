@@ -65,17 +65,21 @@ class GameRoom:
             return "Error"
 
     async def start_game(self):
-        engine_class = GAME_ENGINES.get(self.game)
-        if engine_class is None:
-            return "Error"
+        selected_game = self.game if self.game != Games.NOT_SELECTED else Games.CRASH
+        engine_class = GAME_ENGINES.get(selected_game, CrashOutEngine)
 
         self.state = RoomStates.PLAYING
         print("engine: ", self.active_engine)
-        if self.active_engine is not None and self.active_engine.phase.value == 2:
-            self.active_engine = None
-        if len(self.players) >= CrashOutEngine.MINIMUM_PLAYERS and self.active_engine is None:
+        if self.active_engine is not None:
+            phase_value = getattr(getattr(self.active_engine, "phase", None), "value", getattr(self.active_engine, "phase", None))
+            if phase_value in {2, "game_over"}:
+                self.active_engine = None
+
+        minimum_players = 2 if selected_game == Games.SLANG else CrashOutEngine.MINIMUM_PLAYERS
+
+        if len(self.players) >= minimum_players and self.active_engine is None:
             print("There are enough players to start the game")
-            self.active_engine = CrashOutEngine(players=self.players, sio=self.sio, room=self.room_code)
+            self.active_engine = engine_class(players=self.players, sio=self.sio, room=self.room_code)
             print("Game Engine has been started")
             await self.active_engine.start() #Start the game loop
             print("Starting the game loop")

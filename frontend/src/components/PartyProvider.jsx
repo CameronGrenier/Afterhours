@@ -54,8 +54,15 @@ export function PartyProvider({ children }) {
   });
 
   useSocketEvent("lobby_update", (data) => {
-    //Later on add slang and other games here
-    navigate(data.game === "Crash Out" ? "/crashout" : "/room");
+    const selectedGame = data?.game;
+
+    if (selectedGame === "Crash Out") {
+      navigate("/crashout");
+    } else if (selectedGame === "Slang") {
+      navigate("/slang");
+    } else {
+      navigate("/room");
+    }
   });
 
   useSocketEvent("kicked", (data) => {

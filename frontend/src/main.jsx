@@ -8,6 +8,7 @@ import TestPage from "./pages/test/TestPage.jsx";
 import RoomPage from "./pages/room/RoomPage.jsx";
 import LobbyPage from "./pages/LobbyPage/LobbyPage.jsx";
 import CrashOutPage from "./pages/crashOut/CrashOut.jsx";
+import SlangPage from "./pages/slang/SlangPage.jsx";
 
 import { PartyProvider } from "./components/PartyProvider.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
@@ -40,7 +41,9 @@ createRoot(document.getElementById("root")).render(
               {/* Room Page */}
               <Route path="/room" element={<RoomPage />} />
               {/* CrashOut Game Page */}
-                <Route path="/crashout" element={<CrashOutPage />} />
+              <Route path="/crashout" element={<CrashOutPage />} />
+              {/* Slang Game Page */}
+              <Route path="/slang" element={<SlangPage />} />
               {/* Component Testing Page */}
               <Route path="/test" element={<TestPage />} />
             </Routes>
