@@ -19,6 +19,7 @@ from service.room_service import room_service
 from service.session_service import SESSIONS, COOKIE_NAME
 from service.session_registry import session_registry
 from Games.Game2.GameEngine.CrashOutEngine import CrashOutEngine, Phases
+from Games.Game1.GameEngine.slangengine import SlangEngine
 
 
 class FakeSio:
@@ -171,6 +172,38 @@ def test_slang_requires_two_players(client, client2):
     second_attempt = client.post("/start_game", json={"code": code})
     assert second_attempt.json()["status"] == "success"
     assert room.active_engine is not None
+
+
+def test_start_game_is_idempotent_when_game_already_running(client, client2):
+    code = host_a_room(client, "alice")
+    room = room_service.active_rooms[code]
+    room.set_game("Slang")
+    join_a_room(client2, code, "bob")
+
+    first_attempt = client.post("/start_game", json={"code": code})
+    assert first_attempt.json()["status"] == "success"
+
+    second_attempt = client.post("/start_game", json={"code": code})
+    assert second_attempt.json()["status"] == "success"
+    assert room.active_engine is not None
+
+
+def test_slang_engine_removes_players_without_error():
+    engine = SlangEngine(players=["alice", "bob"], sio=FakeSio(), room="ABC1")
+
+    engine.remove_player("bob")
+
+    assert "bob" not in engine.game_players
+    assert "alice" in engine.game_players
+
+
+def test_slang_engine_adds_players_without_error():
+    engine = SlangEngine(players=["alice"], sio=FakeSio(), room="ABC1")
+
+    engine.add_player("bob")
+
+    assert "bob" in engine.game_players
+    assert engine.turn_order == ["alice", "bob"]
 
 
 def test_place_bet_over_http(client):

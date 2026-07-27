@@ -113,6 +113,32 @@ class SlangEngine:
         self._cancel_vote_timer()
         await self.sio.emit("game_update", {"type": "END_GAME", "payload": {}}, room=self.room)
 
+    def stop(self) -> None:
+        if self.game_task is not None and not self.game_task.done():
+            self.game_task.cancel()
+
+    def add_player(self, player_name: str) -> None:
+        if player_name in self.game_players:
+            return
+
+        self.game_players[player_name] = SlangPlayerClass(player_name)
+        self.turn_order.append(player_name)
+        self.confirmed.discard(player_name)
+        self.votes.discard(player_name)
+
+    def remove_player(self, player_name: str) -> None:
+        if player_name in self.game_players:
+            self.game_players.pop(player_name, None)
+            self.turn_order = [name for name in self.turn_order if name != player_name]
+            self.confirmed.discard(player_name)
+            self.votes.discard(player_name)
+            if self.pending_submitter == player_name:
+                self.pending_word = None
+                self.pending_submitter = None
+                self._cancel_vote_timer()
+            if self.phase == "turn" and self.turn_order and self.current_player() == player_name:
+                self._cancel_turn_timer()
+
     # Player-driven events
    
     async def handle_event(self, username: str, event_type: str, data: Dict[str, Any]) -> Tuple[bool, str, Any, Any]:
