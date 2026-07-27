@@ -19,7 +19,7 @@ There are two ways to run this. Docker (recommended) brings up the whole stack (
 | `conftest.py` | Shared test setup: fake socket connections, sped-up timers, and the test database configuration. Not a test file itself; pytest loads it automatically. |
 | `test_slangengine.py` | Automated tests for the game logic itself. 13 tests covering turns, voting, timeouts, elimination. |
 | `test_word_bank.py` | Automated tests for the database layer specifically. 10 tests covering migration, word lookup, candidate logging, promotion, and rejection. |
-| `play_cli.py` | Lets a human actually play a real game from the terminal: type words, vote, watch turns advance. Uses real 15-second timers, unlike the test suite. |
+| `play_test.py` | Lets a human actually play a real game from the terminal: type words, vote, watch turns advance. Uses real 15-second timers, unlike the test suite. |
 
 ---
 
@@ -303,7 +303,7 @@ MySQL does have to actually be running for any of this to work.
 ## Playtesting (actually playing a game)
 
 ```
-python play_cli.py
+python play_test.py
 ```
 
 Enter player names when prompted, then take turns typing words as whichever player is currently up. `quit` at any prompt exits cleanly.
