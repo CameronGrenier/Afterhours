@@ -333,6 +333,7 @@ export default function SlangPage() {
 
   async function handleConfirmReady() {
     try {
+      console.log("My username is: ", username)
       const response = await sendGameEvent(partyCode, username, "confirm_ready", {});
       if (response.status !== "success") {
         warning(response.message ?? "Could not confirm ready.");

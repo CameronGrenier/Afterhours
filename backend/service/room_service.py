@@ -267,6 +267,7 @@ class RoomService:
         return {"status": "success"}
 
     async def handle_http_game_event(self, request, session_id):
+        print("Got HTTP request", request)
         code = request.code
 
         session, error = verify_session_in_room(session_id, code)
@@ -277,10 +278,9 @@ class RoomService:
         if room is None:
             return {"status": "codeError", "message": "Room with that code does not exist"}
 
-        verified_username = session["username"]
 
         success, message, local_payload, _global_payload = await room.handle_event(
-            verified_username,
+            request.username,
             request.event_type,
             request.data,
         )
@@ -292,7 +292,7 @@ class RoomService:
                     {
                         "type": "PLAYER_ACTION",
                         "payload": {
-                            "player": verified_username,
+                            "player": request.username,
                             "action": request.event_type,
                             "details": _global_payload,
                         },
