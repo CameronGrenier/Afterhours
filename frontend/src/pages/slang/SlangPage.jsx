@@ -326,11 +326,14 @@ export default function SlangPage() {
     );
   }, [gameState.phase, gameState.eliminatedPlayer]);
 
+  // The blackout is the last thing this route shows. Navigate straight out of
+  // it rather than clearing the state first — clearing would unmount the
+  // overlay and flash the game screen for a frame before the route changes.
   useEffect(() => {
     if (!blackout) return;
-    const timeout = setTimeout(() => setBlackout(null), BLACKOUT_HOLD_MS);
+    const timeout = setTimeout(() => navigate("/lobby"), BLACKOUT_HOLD_MS);
     return () => clearTimeout(timeout);
-  }, [blackout]);
+  }, [blackout, navigate]);
 
   const showBlackout = Boolean(blackout);
 
@@ -1023,7 +1026,7 @@ function BlackoutOverlay({ player, isMe, lives, holdMs }) {
           turns waiting into an instruction. */}
       <div className="absolute inset-x-0 bottom-0 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <p className="mb-3 text-center font-mono text-xs tabular-nums text-white/35">
-          {secondsLeft}s
+          back to lobby in {secondsLeft}s
         </p>
         <div className="h-[3px] w-full overflow-hidden rounded-full bg-white/10">
           <div

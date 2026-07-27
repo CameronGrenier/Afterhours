@@ -32,22 +32,28 @@ createRoot(document.getElementById("root")).render(
     <ToastProvider>
       <BrowserRouter>
         <PartyProvider>
-          <CrashOutProvider>
-            <Routes>
-              {/* Landing Page */}
-              <Route path="/" element={<App />} />
-              {/* Lobby Page */}
-              <Route path="/lobby" element={<LobbyPage/>} />
-              {/* Room Page */}
-              <Route path="/room" element={<RoomPage />} />
-              {/* CrashOut Game Page */}
-              <Route path="/crashout" element={<CrashOutPage />} />
-              {/* Slang Game Page */}
-              <Route path="/slang" element={<SlangPage />} />
-              {/* Component Testing Page */}
-              <Route path="/test" element={<TestPage />} />
-            </Routes>
-          </CrashOutProvider>
+          <Routes>
+            {/* Landing Page */}
+            <Route path="/" element={<App />} />
+            {/* Lobby Page */}
+            <Route path="/lobby" element={<LobbyPage/>} />
+            {/* Room Page */}
+            <Route path="/room" element={<RoomPage />} />
+            {/* CrashOut Game Page — CrashOutProvider is scoped here so its
+                global game_update/END_GAME handling only runs on this route */}
+            <Route
+              path="/crashout"
+              element={
+                <CrashOutProvider>
+                  <CrashOutPage />
+                </CrashOutProvider>
+              }
+            />
+            {/* Slang Game Page */}
+            <Route path="/slang" element={<SlangPage />} />
+            {/* Component Testing Page */}
+            <Route path="/test" element={<TestPage />} />
+          </Routes>
         </PartyProvider>
       </BrowserRouter>
     </ToastProvider>
