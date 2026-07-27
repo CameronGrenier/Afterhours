@@ -148,10 +148,23 @@ class SlangEngine:
     def remove_player(self, player_name: str) -> None:
         print(f"[SlangEngine::remove_player] Attempting to remove player: '{player_name}'")
         if player_name in self.game_players:
+            # Check if this player is the current turn player BEFORE removing them
+            was_current = (
+                self.phase == "turn"
+                and self.turn_order
+                and 0 <= self.current_index < len(self.turn_order)
+                and self.turn_order[self.current_index] == player_name
+            )
+
             self.game_players.pop(player_name, None)
             self.turn_order = [name for name in self.turn_order if name != player_name]
             self.confirmed.discard(player_name)
             self.votes.discard(player_name)
+
+            # Adjust current_index to stay in bounds after removal
+            if self.turn_order:
+                self.current_index = min(self.current_index, len(self.turn_order) - 1)
+
             print(f"[SlangEngine::remove_player] Removed '{player_name}'. Updated turn_order: {self.turn_order}")
 
             if self.pending_submitter == player_name:
@@ -160,7 +173,7 @@ class SlangEngine:
                 self.pending_submitter = None
                 self._cancel_vote_timer()
 
-            if self.phase == "turn" and self.turn_order and self.current_player() == player_name:
+            if was_current:
                 print(f"[SlangEngine::remove_player] Removed player '{player_name}' was the active turn player! Cancelling turn timer.")
                 self._cancel_turn_timer()
         else:
