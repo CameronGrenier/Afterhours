@@ -8,8 +8,9 @@ test adds afterward, so repeated runs don't leave junk rows piling up.
 """
 
 from Games.Game1.GameEngine.word_bank import word_bank
+from pathlib import Path
 
-
+CSV_PATH = Path(__file__).parent / "slang_words.csv"
 # ---------------------------------------------------------------------
 # migrate_csv: safe to call repeatedly without duplicating anything
 # ---------------------------------------------------------------------
@@ -20,7 +21,7 @@ def test_migrate_csv_is_safe_to_rerun_without_duplicating():
     before = cursor.fetchone()[0]
     cursor.close()
 
-    inserted = word_bank.migrate_csv("slang_words.csv")
+    inserted = word_bank.migrate_csv(str(CSV_PATH))
 
     cursor = word_bank._conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM Term_Category")

@@ -11,6 +11,7 @@ services:
       - mysql_data:/var/lib/mysql
       - ./backend/db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./backend/db/02_words.sql:/docker-entrypoint-initdb.d/02_words.sql
+      - ./backend/db/03_test_db.sh:/docker-entrypoint-initdb.d/03_test_db.sh
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=TCP"]
       interval: 5s
