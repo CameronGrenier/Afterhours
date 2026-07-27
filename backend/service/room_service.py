@@ -258,11 +258,16 @@ class RoomService:
 
         status = await room.start_game()
         if status == "Error":
-            return {"status": "error", "message": "not enough players to start the selected game"}
+            selected_game = room.game.value if room.game != "Not selected" else "Crash Out"
+            return {
+                "status": "error",
+                "message": f"Not enough players to start {selected_game}.",
+            }
 
         return {"status": "success"}
 
     async def handle_http_game_event(self, request, session_id):
+        print("Got HTTP request", request)
         code = request.code
 
         session, error = verify_session_in_room(session_id, code)
@@ -273,15 +278,27 @@ class RoomService:
         if room is None:
             return {"status": "codeError", "message": "Room with that code does not exist"}
 
-        verified_username = session["username"]
 
         success, message, local_payload, _global_payload = await room.handle_event(
-            verified_username,
+            request.username,
             request.event_type,
             request.data,
         )
 
         if success:
+            if _global_payload is not None:
+                await self.sio.emit(
+                    "game_update",
+                    {
+                        "type": "PLAYER_ACTION",
+                        "payload": {
+                            "player": request.username,
+                            "action": request.event_type,
+                            "details": _global_payload,
+                        },
+                    },
+                    room=code,
+                )
             return {"status": "success", "message": message, "data": local_payload}
 
         return {"status": "error", "message": message}

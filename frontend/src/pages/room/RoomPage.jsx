@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePartyContext } from '@/hooks/usePartyContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {selectGame, startGame }from '@/api/room'
+import { useSocketEvent } from '@/hooks/useSocketEvent';
 
 // Background topology images with responsive variants
 import topoLandscape from "@/assets/Images/topology_bg_images/topology-landscape.webp";
@@ -42,7 +43,7 @@ const GAMES = [
 
 export default function RoomPage() {
   const navigate = useNavigate();
-  const { isMobile, partyCode, username, isHost, error } = usePartyContext();
+  const { isMobile, partyCode, username, isHost, error, players } = usePartyContext();
   const isSmallScreen = useMediaQuery("(max-height: 500px), (max-width: 768px)");
   const isMobileLandscape = useMediaQuery("(orientation: landscape)") && isSmallScreen;
   const [instructionSet, setInstructionSet] = useState([]);
@@ -56,6 +57,12 @@ export default function RoomPage() {
   }, [])
 
   const instructionsRef = useRef();
+
+  useSocketEvent("game_update", (data) => {
+    if (data?.type === "START_GAME") {
+      navigate("/slang", { state: { gameState: data.payload } });
+    }
+  });
 
   const handleInfo = (name) => {
     switch (name) {
@@ -74,25 +81,41 @@ export default function RoomPage() {
   }
 
   async function handlePlay(name) {
+    const attemptStart = async (gameId, route, retryCount = 0) => {
+      const response = await selectGame(partyCode, gameId);
+      const status = response["status"];
+      if (status === "codeError") {
+        error(`Error: room does not exist`);
+        return;
+      }
+
+      const startGameResponse = await startGame(partyCode);
+      const startGameStatus = startGameResponse["status"];
+      if (startGameStatus === "codeError") {
+        error(`Error: room does not exist`);
+        return;
+      }
+
+      if (startGameStatus === "error" && /not enough players/i.test(startGameResponse.message ?? "") && retryCount < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return attemptStart(gameId, route, retryCount + 1);
+      }
+
+      if (startGameStatus !== "success") {
+        error(startGameResponse.message ?? `Unable to start ${gameId}.`);
+        return;
+      }
+
+      navigate(route);
+    };
+
     switch (name) {
-      case "Slang!":
-        navigate("/slang");
+      case "Slang!": {
+        await attemptStart("Slang", "/slang");
         break;
+      }
       case "Crash Out": {
-        console.log("Selecting game: ", name)
-        const response = await selectGame(partyCode, name);
-        const status = response["status"];
-        if (status === "codeError") {
-          error(`Error: room does not exist`);
-          return;
-        }
-        const startGameResponse = await startGame(partyCode);
-        const startGameStatus = startGameResponse["status"];
-        if (startGameStatus === "codeError") {
-          error(`Error: room does not exist`);
-          return;
-        }
-        navigate("/crashout");
+        await attemptStart("Crash Out", "/crashout");
         break;
       }
       default:

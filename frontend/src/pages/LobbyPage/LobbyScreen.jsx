@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Undo2, Trophy, Crown, X, Medal } from "lucide-react";
 import { leaveRoom } from "@/api/room.js"
 import { usePartyContext } from "@/hooks/usePartyContext.js";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+
 import PartyCode from "@/components/PartyCode";
 import Button from "@/components/Button";
 import MembersPanel from "../../components/MembersPanel";
@@ -39,6 +41,12 @@ export default function LobbyScreen({
   const navigate = useNavigate();
   const { sid, info, partyCode, username, players, isHost, setIsHost, setScreen, handleKickPlayer, leaderboard, setLeaderboard} = usePartyContext();
   const { width, height } = dimensions;
+
+  useSocketEvent("game_update", (data) => {
+    if (data?.type === "START_GAME") {
+      navigate("/slang", { state: { gameState: data.payload } });
+    }
+  });
 
   /**
   * Starts the room by navigating to /room with the state it needs.
