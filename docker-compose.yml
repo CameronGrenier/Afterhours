@@ -2,7 +2,6 @@ services:
   db:
     image: mysql:8.4
     environment:
-      FRONTEND_ORIGIN: "https://afterhrs.party,https://www.afterhrs.party,http://localhost:5173"
       MYSQL_ROOT_PASSWORD: rootpw
       MYSQL_DATABASE: cp476_afterhours
       MYSQL_USER: afterhours
@@ -18,11 +17,13 @@ services:
       timeout: 3s
       retries: 10
       start_period: 30s
+
   backend:
     build: ./backend
     ports:
       - "127.0.0.1:8000:8000"
     environment:
+      FRONTEND_ORIGIN: "https://afterhrs.party,https://www.afterhrs.party,http://localhost:5173"
       MYSQL_HOST: db
       MYSQL_USER: afterhours
       MYSQL_PASSWORD: afterhours_dev
@@ -31,6 +32,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
   frontend:
     build: ./frontend
     ports:
