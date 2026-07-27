@@ -225,15 +225,14 @@ class RoomService:
         code = request.code
         room = self._get_room(code)
 
-        #session, error = verify_host(session_id, code)
-
-        # ensure user is the host
-        # if error:
-        #     return error
-
         if room is None:
             return {"status": "codeError", "message": f"Game room {code} does not exist"}
 
+        session, error = verify_host(session_id, code)
+        # ensure user is the host
+        if error:
+            return error
+        
         selected_game = room.set_game(request.game_id)
         print("Sending lobby update: ", selected_game.value)
         await self.sio.emit("lobby_update", {"game": selected_game.value}, room=code)

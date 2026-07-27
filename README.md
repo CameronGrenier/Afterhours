@@ -2,6 +2,9 @@
 
 A multiplayer party game web app. Users create or join a lobby with a short code, pick a mini game, and play together in real time. No accounts, no setup.
 
+## Current Status
+
+Milestone 03
 ## Team Members
 
 * Jake
@@ -32,12 +35,10 @@ Afterhours/
 ├── docker-compose.yml   # Runs the full stack: database, backend, frontend
 ├── backend/             # FastAPI + Socket.IO server. See backend/README.md
 │   └── db/              # SQL files auto-run by MySQL on first boot
+│   └── games/           # Contains all game engines
 └── frontend/            # React SPA. See frontend/README.md
 ```
 
-## Current Status
-
-Milestone 03
 
 ---
 
@@ -81,7 +82,7 @@ Three containers start in order:
 
 ### 4. Open the app
 
-```
+```bash
 http://localhost:5173
 ```
 
@@ -91,7 +92,7 @@ The backend API is at `http://localhost:8000` if you want to hit it directly.
 
 Press `Ctrl+C` in the terminal. To also remove the containers and network:
 
-```
+```bash
 docker compose down
 ```
 
@@ -99,14 +100,23 @@ docker compose down
 
 MySQL only runs the SQL files in `backend/db/` on its very first boot, while its data directory is empty. To apply changes to those files, wipe the data and start fresh:
 
-```
+```bash
 docker compose down -v
 docker compose up --build
 ```
 
 Without `-v`, the old data survives and the SQL files are skipped.
 
-### Troubleshooting
+## Running tests
+An automated test suite is available by simply running:
+
+```bash
+docker compose exec backend pytest -v
+```
+
+This will run all pytest files in the backend directory.
+
+## Troubleshooting
 
 **`cannot find the file specified` mentioning `dockerDesktopLinuxEngine`.** Docker Desktop is not running. Start it and wait for the whale icon to settle.
 

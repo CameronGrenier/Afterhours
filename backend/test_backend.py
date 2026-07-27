@@ -1,9 +1,8 @@
 """
-Afterhours backend Tests.
+Afterhours backend tests.
 
 To run:
-  1. pip install pytest httpx
-  2. python -m pytest tests_backend.py
+  docker compose exec backend pytest test_backend.py -v
 """
 
 import sys
@@ -59,13 +58,15 @@ def fresh_state():
 
 @pytest.fixture
 def client():
-    return TestClient(create_http_app())
+    with TestClient(create_http_app()) as c:
+        yield c
 
 
 @pytest.fixture
 def client2():
     # A second client = a second browser, but the same in-memory backend, for second player test.
-    return TestClient(create_http_app())
+    with TestClient(create_http_app()) as c:
+        yield c
 
 
 def host_a_room(c, username="alice"):
