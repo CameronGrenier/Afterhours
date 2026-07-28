@@ -49,7 +49,13 @@ def create_http_app() -> FastAPI:
     async def session(request: Request, response: Response):
         session_id = get_session_id(request)
         if session_id is None or session_id not in SESSIONS:
+            reason = "no cookie" if session_id is None else "cookie not in SESSIONS"
             session_id = create_session()
+            print(
+                f"[session] /session CREATED new session ({reason}): "
+                f"{session_id[:8]}... | set-cookie {COOKIE_NAME} "
+                f"(samesite=lax, secure=False) | origin={request.headers.get('origin')}"
+            )
             response.set_cookie(
                 key = COOKIE_NAME,
                 value = session_id,
@@ -57,6 +63,8 @@ def create_http_app() -> FastAPI:
                 secure = False, #dev only
                 samesite = "lax",
             )
+        else:
+            print(f"[session] /session REUSED existing session: {session_id[:8]}...")
 
         return {"status": "success", "has_session": True}
 

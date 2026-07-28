@@ -19,6 +19,8 @@ class GameEvent(BaseModel):
 class RoomGameRequest(BaseModel):
     code: str
     game_id: Optional[str] = None
+    # Socket id of the caller, used to verify the host by connection identity.
+    sid: Optional[str] = None
 
 
 class KickPlayerData(BaseModel):

@@ -65,7 +65,7 @@ function normalizeGamePayload(payload = {}) {
 export default function SlangPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { partyCode, username, players, isHost, error, success, warning } = usePartyContext();
+  const { partyCode, username, players, isHost, error, success, warning, sid } = usePartyContext();
 
   const [gameState, setGameState] = useState(EMPTY_STATE);
   const [word, setWord] = useState("");
@@ -354,14 +354,14 @@ export default function SlangPage() {
 
     setIsSubmitting(true);
     try {
-      const selected = await selectGame(partyCode, "Slang");
+      const selected = await selectGame(partyCode, "Slang", sid);
       if (selected.status !== "success") {
         error(selected.message ?? "Couldn't select Slang.");
         setHasAutoStarted(true);
         return;
       }
 
-      const started = await startGame(partyCode);
+      const started = await startGame(partyCode, sid);
       if (started.status !== "success") {
         const needsRetry = /not enough players/i.test(started.message ?? "") && retryCount < 3;
         if (needsRetry) {
@@ -450,14 +450,9 @@ export default function SlangPage() {
 
       <header className="relative z-[3] flex w-full shrink-0 items-center justify-center py-[24px]">
         <h1 className="font-display text-3xl uppercase text-white lg:text-4xl">afterhours</h1>
-        {/* Settings + members kept reachable without disturbing the centred wordmark. */}
-        <div className="absolute inset-y-0 left-4 flex items-center">
-          <SettingsPanel />
-        </div>
-        <div className="absolute inset-y-0 right-4 flex items-center">
-          <MembersPanel />
-        </div>
       </header>
+      <SettingsPanel />
+      <MembersPanel />
 
       <LivesRow used={myLivesUsed} total={myLivesTotal} />
 

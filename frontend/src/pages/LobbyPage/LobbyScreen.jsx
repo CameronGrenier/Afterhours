@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Undo2, Trophy, Crown, X, Medal } from "lucide-react";
 import { leaveRoom } from "@/api/room.js"
 import { usePartyContext } from "@/hooks/usePartyContext.js";
-import { useSocketEvent } from "@/hooks/useSocketEvent";
 
 import PartyCode from "@/components/PartyCode";
 import Button from "@/components/Button";
@@ -42,11 +41,11 @@ export default function LobbyScreen({
   const { sid, info, partyCode, username, players, isHost, setIsHost, setScreen, handleKickPlayer, leaderboard, setLeaderboard} = usePartyContext();
   const { width, height } = dimensions;
 
-  useSocketEvent("game_update", (data) => {
-    if (data?.type === "START_GAME") {
-      navigate("/slang", { state: { gameState: data.payload } });
-    }
-  });
+  // Navigation on game start is handled centrally by PartyProvider's
+  // `lobby_update` listener, which routes players to the correct game route
+  // based on the selected game. A hardcoded `game_update`/START_GAME ->
+  // navigate("/slang") here used to override that and drag everyone into
+  // Slang even when the host picked Crash Out.
 
   /**
   * Starts the room by navigating to /room with the state it needs.

@@ -67,6 +67,10 @@ class GameRoom:
     async def start_game(self):
         selected_game = self.game if self.game != Games.NOT_SELECTED else Games.CRASH
         engine_class = GAME_ENGINES.get(selected_game, CrashOutEngine)
+        print(
+            f"[GameRoom] start_game: self.game={self.game} "
+            f"-> selected_game={selected_game} engine={engine_class.__name__}"
+        )
 
         print("engine: ", self.active_engine)
         if self.active_engine is not None:
@@ -98,6 +102,7 @@ class GameRoom:
             self.game = Games.SLANG
         elif game_id == "Crash Out":
             self.game = Games.CRASH
+        print(f"[GameRoom] set_game: game_id={game_id!r} -> self.game={self.game}")
         return self.game
     async def handle_event(self, username:str, event_type:str, data:Dict[str, Any]):
         if self.active_engine is not None:

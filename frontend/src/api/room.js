@@ -35,17 +35,17 @@ export const kickPlayer = (sid, code, targetUsername) => {
   });
 };
 
-export const selectGame = (code, game_id) => {
-  console.log("Selecting game: ", game_id, " for room: ", code, " with sid: ");
+export const selectGame = (code, game_id, sid) => {
+  console.log("Selecting game: ", game_id, " for room: ", code, " with sid: ", sid);
   return request("/select_game", {
     method: "POST",
-    body: { code, game_id },
+    body: { code, game_id, sid },
   });
 };
 
-export const startGame = (code) => {
+export const startGame = (code, sid) => {
   return request("/start_game", {
     method: "POST",
-    body: { code },
+    body: { code, sid },
   });
 };

@@ -55,6 +55,7 @@ export function PartyProvider({ children }) {
 
   useSocketEvent("lobby_update", (data) => {
     const selectedGame = data?.game;
+    // console.log("[PartyProvider] lobby_update received:", data, "-> selectedGame:", selectedGame);
 
     if (selectedGame === "Crash Out") {
       navigate("/crashout");
@@ -62,6 +63,30 @@ export function PartyProvider({ children }) {
       navigate("/slang");
     } else {
       navigate("/room");
+    }
+  });
+
+  // Authoritative game-start navigation for every player.
+  //
+  // The backend broadcasts `game_update`/START_GAME to all players in the room
+  // when a game begins, so this reliably routes hosts and non-hosts alike. We
+  // route by the game name in the payload instead of a hardcoded destination.
+  //
+  // The `lobby_update` handler above is the *intended* router, but it only runs
+  // when the host-only `select_game` check succeeds — which currently fails, so
+  // `lobby_update` never reaches clients. START_GAME is the dependable signal,
+  // and it's what non-host players receive, so we navigate off it here.
+  useSocketEvent("game_update", (data) => {
+    // console.log("[PartyProvider] game_update received:", data);
+    if (data?.type !== "START_GAME") return;
+
+    const game = data?.payload?.game;
+    // console.log("[PartyProvider] START_GAME payload.game =", game);
+    if (game === "Crash Out") {
+      navigate("/crashout");
+    } else if (game === "Slang!" || game === "Slang") {
+      // SlangPage seeds its initial seating state from this payload.
+      navigate("/slang", { state: { gameState: data.payload } });
     }
   });
 

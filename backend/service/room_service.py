@@ -40,6 +40,33 @@ class RoomService:
         if self.sio is None:
             raise RuntimeError("Socket.IO server has not been attached to RoomService")
 
+    def _verify_host_by_sid(self, sid, code, room):
+        """Verify the caller is the room host by their socket id.
+
+        Host identity is tied to the socket connection (unique per browser tab)
+        rather than the session cookie, which is shared across tabs in the same
+        browser and gets overwritten when another player joins.
+        Returns (True, None) when the caller is the host, else (False, error).
+        """
+        if not sid:
+            print("[room] host check FAIL: no sid provided")
+            return False, {"status": "userError", "message": "Socket ID is required for this action"}
+
+        username = session_registry.get_username(sid)
+        bound_room = session_registry.get_room(sid)
+        if username is None:
+            print(f"[room] host check FAIL: sid={sid} not recognized in registry")
+            return False, {"status": "unauthorized", "message": "Socket not recognized"}
+        if bound_room != code:
+            print(f"[room] host check FAIL: sid={sid} bound_room={bound_room} != {code}")
+            return False, {"status": "forbidden", "message": "You are not in this room"}
+        if username != room.host:
+            print(f"[room] host check FAIL: sid={sid} user={username} != host={room.host}")
+            return False, {"status": "forbidden", "message": "Only the host can preform this action"}
+
+        print(f"[room] host check OK: sid={sid} user={username} host={room.host} room={code}")
+        return True, None
+
     def generate_room_code(self):
         characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
         return "".join(secrets.choice(characters) for _ in range(4))
@@ -82,6 +109,10 @@ class RoomService:
                 session_registry.bind(sid=sid, username=username, room_code=code)
 
                 self.active_rooms[code] = room
+                print(
+                    f"[room] create_room: code={code} host_user={username} sid={sid} "
+                    f"session_id={(session_id[:8] + '...') if session_id else None}"
+                )
                 set_room_membership(session_id, username, code, "host")
                 return {
                     "status": "success",
@@ -115,6 +146,10 @@ class RoomService:
             room=code,
         )
 
+        print(
+            f"[room] join_room: code={code} player_user={username} sid={sid} "
+            f"session_id={(session_id[:8] + '...') if session_id else None}"
+        )
         set_room_membership(session_id, username, code, "player")
         return {
             "status": "success",
@@ -162,25 +197,16 @@ class RoomService:
         actor_sid = request.sid
         target_username = request.targetUsername
 
-        session, error = verify_host(session_id, code)
-
-        # ensure user is the host
-        if error is not None:
-            return error
-
         room = self._get_room(code)
         if room is None:
             return {"status": "codeError", "message": "Room code does not exist"}
 
+        # Verify the host by socket id (per-connection), not the shared cookie.
+        ok, error = self._verify_host_by_sid(actor_sid, code, room)
+        if not ok:
+            return error
+
         actor_username = session_registry.get_username(actor_sid)
-        if actor_username is None:
-            return {"status": "userError", "message": "Actor SID not recognized"}
-
-        if session_registry.get_room(actor_sid) != code:
-            return {"status": "userError", "message": "Requester is not in this room"}
-
-        if actor_username != room.host:
-            return {"status": "forbidden", "message": "Only the host can kick players"}
 
         if target_username == room.host:
             return {"status": "forbidden", "message": "You cannot kick the host"}
@@ -220,19 +246,24 @@ class RoomService:
         }
 
     async def select_game(self, request, session_id):
-        print("Selecting game: ", request.game_id)
+        print(
+            f"[room] select_game: game_id={request.game_id} code={request.code} "
+            f"session_id={(session_id[:8] + '...') if session_id else None}"
+        )
         self._sio_ready()
         code = request.code
         room = self._get_room(code)
 
         if room is None:
+            print(f"[room] select_game FAIL: room {code} does not exist")
             return {"status": "codeError", "message": f"Game room {code} does not exist"}
 
-        session, error = verify_host(session_id, code)
-        # ensure user is the host
-        if error:
+        # Verify the host by socket id (per-connection), not the shared cookie.
+        ok, error = self._verify_host_by_sid(request.sid, code, room)
+        if not ok:
+            print(f"[room] select_game ABORT (host check): {error}")
             return error
-        
+
         selected_game = room.set_game(request.game_id)
         print("Sending lobby update: ", selected_game.value)
         await self.sio.emit("lobby_update", {"game": selected_game.value}, room=code)
@@ -246,14 +277,18 @@ class RoomService:
         code = request.code
         room = self._get_room(code)
 
-        #session, error = verify_host(session_id, code)
-
-        # ensure user is the host
-        #if error:
-        #    return error
-        print("Starting room: ", room)
+        print(
+            f"[room] start_game: code={code} room.game="
+            f"{getattr(room, 'game', None)} sid={request.sid}"
+        )
         if room is None:
             return {"status": "codeError", "message": "Room not found"}
+
+        # Verify the host by socket id (per-connection), not the shared cookie.
+        ok, error = self._verify_host_by_sid(request.sid, code, room)
+        if not ok:
+            print(f"[room] start_game ABORT (host check): {error}")
+            return error
 
         status = await room.start_game()
         if status == "Error":

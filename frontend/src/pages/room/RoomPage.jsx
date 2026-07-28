@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { usePartyContext } from '@/hooks/usePartyContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {selectGame, startGame }from '@/api/room'
-import { useSocketEvent } from '@/hooks/useSocketEvent';
 
 // Background topology images with responsive variants
 import topoLandscape from "@/assets/Images/topology_bg_images/topology-landscape.webp";
@@ -43,7 +42,7 @@ const GAMES = [
 
 export default function RoomPage() {
   const navigate = useNavigate();
-  const { isMobile, partyCode, username, isHost, error, players } = usePartyContext();
+  const { isMobile, partyCode, username, isHost, error, players, sid } = usePartyContext();
   const isSmallScreen = useMediaQuery("(max-height: 500px), (max-width: 768px)");
   const isMobileLandscape = useMediaQuery("(orientation: landscape)") && isSmallScreen;
   const [instructionSet, setInstructionSet] = useState([]);
@@ -58,11 +57,10 @@ export default function RoomPage() {
 
   const instructionsRef = useRef();
 
-  useSocketEvent("game_update", (data) => {
-    if (data?.type === "START_GAME") {
-      navigate("/slang", { state: { gameState: data.payload } });
-    }
-  });
+  // Navigation on game start is handled centrally by PartyProvider's
+  // `lobby_update` listener (game-aware). The host additionally navigates
+  // explicitly in `handlePlay`. A hardcoded START_GAME -> navigate("/slang")
+  // here previously hijacked Crash Out players into Slang.
 
   const handleInfo = (name) => {
     switch (name) {
@@ -82,14 +80,18 @@ export default function RoomPage() {
 
   async function handlePlay(name) {
     const attemptStart = async (gameId, route, retryCount = 0) => {
-      const response = await selectGame(partyCode, gameId);
+      const response = await selectGame(partyCode, gameId, sid);
       const status = response["status"];
       if (status === "codeError") {
         error(`Error: room does not exist`);
         return;
       }
+      if (status === "forbidden" || status === "unauthorized") {
+        error(response["message"] ?? "Only the host can start the game");
+        return;
+      }
 
-      const startGameResponse = await startGame(partyCode);
+      const startGameResponse = await startGame(partyCode, sid);
       const startGameStatus = startGameResponse["status"];
       if (startGameStatus === "codeError") {
         error(`Error: room does not exist`);
