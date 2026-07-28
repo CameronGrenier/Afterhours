@@ -67,6 +67,33 @@ class RoomService:
         print(f"[room] host check OK: sid={sid} user={username} host={room.host} room={code}")
         return True, None
 
+    def _verify_host(self, sid, session_id, code, room):
+        """Verify the caller is the room host, preferring socket-id identity.
+
+        Real browsers share one session cookie across tabs, so the cookie alone
+        can't tell the host apart from a second player in the same browser (the
+        joiner overwrites the shared session's role). The socket id is unique
+        per connection/tab, so when a recognized sid is supplied we trust it.
+
+        When no recognized sid is present we fall back to the cookie-based
+        check. This keeps the HTTP test client working: it uses isolated cookie
+        jars per client and does not send a sid, so the cookie correctly
+        distinguishes host from non-host there.
+        Returns (True, None) when the caller is the host, else (False, error).
+        """
+        if sid and session_registry.get_username(sid) is not None:
+            return self._verify_host_by_sid(sid, code, room)
+
+        _session, error = verify_host(session_id, code)
+        if error:
+            print(f"[room] host check FAIL (cookie fallback): {error}")
+            return False, error
+        print(
+            f"[room] host check OK (cookie fallback): "
+            f"session_id={(session_id[:8] + '...') if session_id else None} room={code}"
+        )
+        return True, None
+
     def generate_room_code(self):
         characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
         return "".join(secrets.choice(characters) for _ in range(4))
@@ -201,8 +228,9 @@ class RoomService:
         if room is None:
             return {"status": "codeError", "message": "Room code does not exist"}
 
-        # Verify the host by socket id (per-connection), not the shared cookie.
-        ok, error = self._verify_host_by_sid(actor_sid, code, room)
+        # Prefer socket-id host verification (correct for same-browser tabs),
+        # falling back to the session cookie for the HTTP test client.
+        ok, error = self._verify_host(actor_sid, session_id, code, room)
         if not ok:
             return error
 
@@ -258,9 +286,10 @@ class RoomService:
             print(f"[room] select_game FAIL: room {code} does not exist")
             return {"status": "codeError", "message": f"Game room {code} does not exist"}
 
-        # Verify the host by session cookie.
-        _session, error = verify_host(session_id, code)
-        if error:
+        # Prefer socket-id host verification (correct for same-browser tabs),
+        # falling back to the session cookie for the HTTP test client.
+        ok, error = self._verify_host(request.sid, session_id, code, room)
+        if not ok:
             print(f"[room] select_game ABORT (host check): {error}")
             return error
 
@@ -284,9 +313,10 @@ class RoomService:
         if room is None:
             return {"status": "codeError", "message": "Room not found"}
 
-        # Verify the host by session cookie.
-        _session, error = verify_host(session_id, code)
-        if error:
+        # Prefer socket-id host verification (correct for same-browser tabs),
+        # falling back to the session cookie for the HTTP test client.
+        ok, error = self._verify_host(request.sid, session_id, code, room)
+        if not ok:
             print(f"[room] start_game ABORT (host check): {error}")
             return error
 
