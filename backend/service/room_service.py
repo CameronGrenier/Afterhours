@@ -258,9 +258,9 @@ class RoomService:
             print(f"[room] select_game FAIL: room {code} does not exist")
             return {"status": "codeError", "message": f"Game room {code} does not exist"}
 
-        # Verify the host by socket id (per-connection), not the shared cookie.
-        ok, error = self._verify_host_by_sid(request.sid, code, room)
-        if not ok:
+        # Verify the host by session cookie.
+        _session, error = verify_host(session_id, code)
+        if error:
             print(f"[room] select_game ABORT (host check): {error}")
             return error
 
@@ -284,9 +284,9 @@ class RoomService:
         if room is None:
             return {"status": "codeError", "message": "Room not found"}
 
-        # Verify the host by socket id (per-connection), not the shared cookie.
-        ok, error = self._verify_host_by_sid(request.sid, code, room)
-        if not ok:
+        # Verify the host by session cookie.
+        _session, error = verify_host(session_id, code)
+        if error:
             print(f"[room] start_game ABORT (host check): {error}")
             return error
 
